@@ -1,5 +1,5 @@
 # Local installation
-1. Download or clone package PyLT3 (pronounced _pilot-ee_) to your project folder;
+1. Download or clone package PyLT3 (pronounced _pilot_ or _pilot-ee_) to your project folder;
 2. import the module that you need, e.g.
 
 `from PyLT3 import FileHelpers`
