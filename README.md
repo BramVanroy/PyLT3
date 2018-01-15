@@ -44,6 +44,40 @@ expression here (required)
 entering a new directory; `2` will also print when processing a new file
 (`default=0`)
 
+#### Examples
+Given a directory and an integer, get a dictionary with all n-grams up to the given integer. For instance, if you want 
+unigrams, bigrams, and trigrams then the integer should be `3`. The resulting dictionary has as primary keys these 
+integers (e.g. `1`, `2`, and `3`) and as value a Counter object - but it can be iterated as if it is an embedded 
+dictionary.
+
+
+```python
+from PyLT3 import FileHelpers
+from nltk import word_tokenize
+from nltk.util import ngrams
+from collections import Counter
+
+gram_freqs = {}
+
+def create_ngrams(file, i):
+    global gram_freqs
+
+    for n in range(1, i+1):
+        if n not in gram_freqs:
+            gram_freqs[n] = Counter([])
+
+        text = open(file).read()
+        tokenised = word_tokenize(text)
+        grams = ngrams(tokenised, n)
+        gram_freqs[n] += Counter(grams)
+
+FileHelpers.scandir_and_execute(r"C:\brown\corpus", lambda file: create_ngrams(file, 3), verbose=2)
+
+for n in gram_freqs:
+    for ngram in gram_freqs[n]:
+        print(str(n) + " GRAM: " + str(ngram) + " - freq: " + str(gram_freqs[n][ngram]))
+```
+
 
 ### `scanfile_and_execute`
 ```python
