@@ -10,18 +10,7 @@ In all functions below, it is recommended to use
 [lambda expressions](https://docs.python.org/3/tutorial/controlflow.html#lambda-expressions) as a value for `exec_func`
 when using a function with more than one argument. By default, the current file (`scandir_and_execute`) or the current 
 line (`scanfile_and_execute`) is passed to `exec_func` but if you want to specify more arguments for your own function, 
-you should use lambdas. For instance, if you want to execute a function only for files with a given extension, you could
-do something like this:
-
-```python
-from PyLT3 import FileHelpers
- 
-def parse_file(file, extension):
-    if file.endswith(f".{extension}"):
-        print(file)
- 
-FileHelpers.scandir_and_execute(r"C:\my\data", lambda file: parse_file(file, "xml"))
-``` 
+you should use lambdas with the respective items as first argument (cf. some of the examples below). 
 
 
 ## FileHelpers
@@ -45,8 +34,21 @@ entering a new directory; `2` will also print when processing a new file
 (`default=0`)
 
 #### Examples
-Given a directory and an integer, get a dictionary with all n-grams up to the given integer. For instance, if you want 
-unigrams, bigrams, and trigrams then the integer should be `3`. The resulting dictionary has as primary keys these 
+**1.** If you want to execute a function only for files with a given extension, you could do something like this:
+
+```python
+from PyLT3 import FileHelpers
+ 
+def parse_file(file, extension):
+    if file.endswith(f".{extension}"):
+        print(file)
+ 
+FileHelpers.scandir_and_execute(r"C:\my\data", lambda file: parse_file(file, "xml"))
+``` 
+
+
+**2.** Given a directory and an integer, get a dictionary with all n-grams up to the given integer. For instance, if you
+want unigrams, bigrams, and trigrams then the integer should be `3`. The resulting dictionary has as primary keys these 
 integers (e.g. `1`, `2`, and `3`) and as value a Counter object - but it can be iterated as if it is an embedded 
 dictionary.
 
@@ -96,3 +98,22 @@ expression here (required)
 of the line that's currently being processed (in-place, i.e. ending with `\r`); `2` will shown the current file 
 followed by the line number (also in-place)
 (`default=0`)
+
+#### Examples
+**1.** If you want to replace certain occurrences in a file, for instance because you want to make collocations by 
+delimiting a keyword by tabs, you can easily do that with this function. In the output file, the keyword will be 
+surrounded by tabs so that tools such as AntConc can easily recognise it.
+
+
+```python
+from PyLT3 import FileHelpers
+import re
+
+def collocate_out(line, word):
+    replaced = re.sub(r"\b(%ss?)\b" % re.escape(word), r"\t\1\t", line, flags=re.IGNORECASE)
+    OUT.write(replaced)
+
+OUT = open("collocation.txt", "w")
+FileHelpers.scanfile_and_execute(r"C:\Python\cookies.txt", lambda line: collocate_out(line, "cookie"))
+OUT.close()
+```
