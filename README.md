@@ -114,6 +114,6 @@ def collocate_out(line, word):
     OUT.write(replaced)
 
 OUT = open("collocation.txt", "w")
-FileHelpers.scanfile_and_execute(r"C:\Python\cookies.txt", lambda line: collocate_out(line, "cookie"))
+FileHelpers.scanfile_and_execute(r"C:\my\cookies.txt", lambda line: collocate_out(line, "cookie"))
 OUT.close()
 ```
