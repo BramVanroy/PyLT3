@@ -25,6 +25,8 @@ def scandir_and_execute(root, exec_func, exclude_dirs=None, recursive=True, verb
 
             exec_func(entry.path)
 
+    return None
+
 
 def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding(), verbose=0):
     if verbose not in range(0, 3):
@@ -45,6 +47,8 @@ def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding()
 
         if verbose > 0:
             print("", flush=True)
+
+    return None
 
 
 def concatenate_files(input_item, output_file, extension=False, remove_headers=False, retain_first_header=False,

@@ -117,3 +117,13 @@ OUT = open("collocation.txt", "w")
 FileHelpers.scanfile_and_execute(r"C:\my\cookies.txt", lambda line: collocate_out(line, "cookie"))
 OUT.close()
 ```
+
+
+### `scanfile_and_execute`
+```python
+concatenate_files(input_item, output_file, extension=False, remove_headers=False, retain_first_header=False,
+    recursive=True, verbose=0)
+```
+
+Takes a list of files and concatenates them, or concatenates all files - optionally filtered by extension - in a given 
+directory. 
