@@ -53,9 +53,6 @@ def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding()
 
 def concatenate_files(input_item, output_file, extension=False, remove_headers=False, retain_first_header=False,
                       recursive=True, verbose=0):
-    # If the input is a list (not a str instance), set switch to True
-    is_file_list = False if isinstance(input_item, str) else True
-
     if verbose not in range(0, 3):
         raise ValueError(f'Unexpected value {verbose} for verbose')
 
@@ -66,10 +63,13 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
     if not isinstance(retain_first_header, bool):
         raise ValueError(f'Unexpected value {retain_first_header} for retain_first_header. A boolean value is required')
 
+    # If the input is a list (not a str instance), set switch to True
+    is_file_list = False if isinstance(input_item, str) else True
+
     files_skipped_n = 0
     files_concat_n = 0
 
-    def append_to_file(file_path, fout, ext):
+    def append_to_file(file_path, _fout, ext):
         nonlocal files_concat_n, files_skipped_n
         if not ext or file_path.endswith(f".{ext}"):
             files_concat_n = files_concat_n+1
@@ -78,9 +78,11 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
                 for line in fin:
                     line_n = line_n+1
                     if (files_concat_n == 1 and retain_first_header) or line_n > remove_headers:
-                        fout.write(line)
-                    else:
-                        files_skipped_n = files_skipped_n+1
+                        _fout.write(line)
+        else:
+            files_skipped_n = files_skipped_n+1
+
+        return None
 
     with open(output_file, 'w', encoding='utf-8') as fout:
         if is_file_list:
@@ -91,10 +93,10 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
                 else:
                     raise FileNotFoundError(f'File {file} does not exist')
         else:
-            scandir_and_execute(input_item, lambda file: append_to_file(file, fout, extension), recursive=recursive,
+            scandir_and_execute(input_item, lambda _file: append_to_file(_file, fout, extension), recursive=recursive,
                                 verbose=verbose)
     if verbose > 0:
-        print(f"Finished concatenation. concatenated: {files_concat_n}, skipped: {files_skipped_n}", flush=True)
+        print(f"Finished! Concatenated {files_concat_n} files, skipped {files_skipped_n} files", flush=True)
 
     return output_file
 
