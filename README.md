@@ -86,7 +86,8 @@ for n in gram_freqs:
 scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding(), verbose=0)
 ```
 
-Reads a file and executes a user-defined function for each line that is read.
+Reads a file and executes a user-defined function for each line with the line itself and line number as default
+arguments.
 
 #### Arguments and options
 * `file`: path to the file that will be processed (required)
@@ -109,12 +110,14 @@ surrounded by tabs so that tools such as AntConc can easily recognise it.
 from PyLT3 import FileHelpers
 import re
 
-def collocate_out(line, word):
-    replaced = re.sub(r"\b(%ss?)\b" % re.escape(word), r"\t\1\t", line, flags=re.IGNORECASE)
-    OUT.write(replaced)
+def collocate_out(line, index, word):
+    # Skip header line
+    if index > 0:
+        replaced = re.sub(r"\b(%ss?)\b" % re.escape(word), r"\t\1\t", line, flags=re.IGNORECASE)
+        OUT.write(replaced)
 
 OUT = open("collocation.txt", "w")
-FileHelpers.scanfile_and_execute(r"C:\my\cookies.txt", lambda line: collocate_out(line, "cookie"))
+FileHelpers.scanfile_and_execute(r"C:\my\cookies.txt", lambda line, index: collocate_out(line, index, "cookie"))
 OUT.close()
 ```
 

@@ -32,21 +32,18 @@ def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding()
     if verbose not in range(0, 3):
         raise ValueError(f'Unexpected value {verbose} for verbose')
 
-    line_n = 0
+    line_i = 0
     with open(file, encoding=encoding) as f:
         for line in f:
             if verbose > 0:
-                line_n = line_n+1
                 proc_str = "Processing"
                 if verbose > 1:
                     proc_str += f" file {file}"
-                proc_str += f" line n. {line_n}"
+                proc_str += f" line {line_i+1}"
                 print(proc_str, end="\r", flush=True)
 
-            exec_func(line)
-
-        if verbose > 0:
-            print("", flush=True)
+            exec_func(line, line_i)
+            line_i = line_i + 1
 
     return None
 
