@@ -1,8 +1,9 @@
 import os
 import locale
+import operator
 
 
-def scandir_and_execute(root, exec_func, exclude_dirs=None, recursive=True, verbose=0):
+def scan_dir_and_execute(root, exec_func, exclude_dirs=None, recursive=True, verbose=0):
     if verbose not in range(0, 3):
         raise ValueError(f'Unexpected value {verbose} for verbose')
 
@@ -18,7 +19,7 @@ def scandir_and_execute(root, exec_func, exclude_dirs=None, recursive=True, verb
             if recursive:
                 # If truth-y value: keep value, otherwise use None
                 next_exclude = exclude_dirs if exclude_dirs else None
-                scandir_and_execute(entry.path, exec_func, next_exclude, True, verbose)
+                scan_dir_and_execute(entry.path, exec_func, next_exclude, True, verbose)
         elif entry.is_file():
             if verbose > 1:
                 print(f"\tProcessing {entry.name}", flush=True)
@@ -28,7 +29,7 @@ def scandir_and_execute(root, exec_func, exclude_dirs=None, recursive=True, verb
     return None
 
 
-def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding(), verbose=0):
+def scan_file_and_execute(file, exec_func, encoding=locale.getpreferredencoding(), verbose=0):
     if verbose not in range(0, 3):
         raise ValueError(f'Unexpected value {verbose} for verbose')
 
@@ -48,8 +49,8 @@ def scanfile_and_execute(file, exec_func, encoding=locale.getpreferredencoding()
     return None
 
 
-def concatenate_files(input_item, output_file, extension=False, remove_headers=False, retain_first_header=False,
-                      recursive=True, verbose=0):
+def concatenate_files(input_item, output_file, extension=None, remove_headers=0, retain_first_header=False,
+                      recursive=True, encoding=locale.getpreferredencoding(), verbose=0):
     if verbose not in range(0, 3):
         raise ValueError(f'Unexpected value {verbose} for verbose')
 
@@ -62,6 +63,8 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
 
     # If the input is a list (not a str instance), set switch to True
     is_file_list = False if isinstance(input_item, str) else True
+
+    extension = '' if not extension else extension
 
     files_skipped_n = 0
     files_concat_n = 0
@@ -81,7 +84,7 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
 
         return None
 
-    with open(output_file, 'w', encoding='utf-8') as fout:
+    with open(output_file, 'w', encoding=encoding) as fout:
         if is_file_list:
             for file in input_item:
                 file = os.path.normpath(file)
@@ -90,10 +93,27 @@ def concatenate_files(input_item, output_file, extension=False, remove_headers=F
                 else:
                     raise FileNotFoundError(f'File {file} does not exist')
         else:
-            scandir_and_execute(input_item, lambda _file: append_to_file(_file, fout, extension), recursive=recursive,
-                                verbose=verbose)
+            scan_dir_and_execute(input_item, lambda _file: append_to_file(_file, fout, extension), recursive=recursive,
+                                 verbose=verbose)
     if verbose > 0:
         print(f"Finished! Concatenated {files_concat_n} files, skipped {files_skipped_n} files", flush=True)
 
     return output_file
 
+
+def print_simple_dict(simple_dict, output_file, sort_on=None, reverse=False, encoding=locale.getpreferredencoding()):
+    if sort_on:
+        if sort_on == 'keys':
+            print_dict = sorted(simple_dict.items(), key=operator.itemgetter(0), reverse=reverse)
+        elif sort_on == 'values':
+            print_dict = sorted(simple_dict.items(), key=operator.itemgetter(1), reverse=reverse)
+        else:
+            raise ValueError(f'Unexpected value {sort_on} for sort_on. Use None, keys, or values')
+    else:
+        print_dict = list(simple_dict.items())
+
+    with open(output_file, 'w', encoding=encoding) as fout:
+        for tupe in print_dict:
+                fout.write(f"{tupe[0]}\t{tupe[1]}\n")
+
+    return output_file
