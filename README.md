@@ -3,27 +3,27 @@
 - [Local installation](#local-installation)
 - [Usage](#usage)
   * [FileHelpers](#filehelpers)
-    + [`scan_dir_and_execute`](#-scan-dir-and-execute-)
+    + [`scan_dir_and_execute`](#scan-dir-and-execute)
       - [Arguments and options](#arguments-and-options)
       - [Examples](#examples)
-    + [`scan_file_and_execute`](#-scan-file-and-execute-)
+    + [`scan_file_and_execute`](#scan-file-and-execute)
       - [Arguments and options](#arguments-and-options-1)
       - [Examples](#examples-1)
-    + [`concatenate_files`](#-concatenate-files-)
+    + [`concatenate_files`](#concatenate-files)
       - [Arguments and options](#arguments-and-options-2)
       - [Examples](#examples-2)
-    + [`print_simple_dict`](#-print-simple-dict-)
+    + [`print_simple_dict`](#print-simple-dict)
       - [Arguments and options](#arguments-and-options-3)
       - [Examples](#examples-3)
   * [XmlHelpers](#xmlhelpers)
-    + [`scan_xml_and_execute`](#-scan-xml-and-execute-)
+    + [`scan_xml_and_execute`](#scan-xml-and-execute)
       - [Arguments and options](#arguments-and-options-4)
       - [Examples](#examples-4)
-    + [`get_attr_frequencies`](#-get-attr-frequencies-)
+    + [`get_attr_frequencies`](#get-attr-frequencies)
       - [Arguments and options](#arguments-and-options-5)
       - [Examples](#examples-5)
   * [TypeHelpers](#typehelpers)
-    + [`clean_simple_dict`](#-clean-simple-dict-)
+    + [`clean_simple_dict`](#clean-simple-dict)
       - [Arguments and options](#arguments-and-options-6)
       - [Examples](#examples-6)
 
@@ -192,7 +192,7 @@ TODO: add examples
 
 ### `print_simple_dict`
 ```python
-print_simple_dict(simple_dict, output_file, sort_on=None, reverse=False, encoding=locale.getpreferredencoding())
+print_simple_dict(simple_dict, output_file, encoding=locale.getpreferredencoding())
 ```
 
 Given a one-level dictionary, this function will print it to an output file as key-value pairs, separated by tabs. It 
@@ -201,7 +201,7 @@ is possible to sort the dictionary by keys or values, and reverse the order.
 #### Arguments and options
 * `simple_dict`: dictionary that needs printing (required)
 * `output_file`: the resulting output file (required)
-* `sort_on`: sort the resulting dictionary and sort on `keys` or `values` (only these values and `None` are accepted)
+* `sort_on`: sort the resulting dictionary and sort on `keys` or `value` (only these values and `None` are accepted)
 (`default=None`)
 * `reverse`: a boolean that determines whether a sorted dictionary will be reserved or not (`default=False`)
 * `encoding`: the encoding used for opening the file, as it would be used in an `open()` call
