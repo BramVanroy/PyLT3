@@ -1,16 +1,16 @@
-import xml.etree.ElementTree as Et
+from xml.etree.ElementTree import iterparse
+from TypeHelpers import verify_kwargs
 
 
 def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
     if verbose not in range(0, 3):
-        raise ValueError(f'Unexpected value {verbose} for verbose')
+        raise ValueError(f"Unexpected value {verbose} for verbose. 0, 1, or 2 expected")
 
-    if restrict_to_nodes is not None:
-        if isinstance(restrict_to_nodes, str):
-            raise ValueError(f'Unexpected value {restrict_to_nodes} for restrict_to_nodes. None or a list expected')
+    if restrict_to_nodes is not None and not isinstance(restrict_to_nodes, list):
+        raise ValueError(f"Unexpected value {restrict_to_nodes} for restrict_to_nodes. None or a list expected")
 
     node_i = 0
-    for _, elem in Et.iterparse(file):
+    for _, elem in iterparse(file):
         if restrict_to_nodes is not None and elem.tag not in restrict_to_nodes:
             elem.clear()
             continue
@@ -29,9 +29,12 @@ def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
     return None
 
 
-def get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, restrict_to_pos=None, pos='pos', verbose=0):
-    if restrict_to_pos is not None and isinstance(restrict_to_pos, str):
-        raise ValueError(f'Unexpected value {restrict_to_pos} for restrict_to_pos. None or a list expected')
+def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
+    default_params = {'normalize_capitalisation': False, 'pos': 'pos', 'verbose': 0}
+    kwargs = verify_kwargs(default_params, kwargs)
+
+    if restrict_to_pos is not None and not isinstance(restrict_to_pos, list):
+        raise ValueError(f"Unexpected value {restrict_to_pos} for restrict_to_pos. None or a list expected")
 
     freq_d = {}
 
@@ -40,10 +43,10 @@ def get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, rest
         if attr not in attrs:
             return None
 
-        if restrict_to_pos is not None and (pos not in attrs or attrs[pos] not in restrict_to_pos):
+        if restrict_to_pos is not None and (kwargs['pos'] not in attrs or attrs[kwargs['pos']] not in restrict_to_pos):
             return None
 
-        attr_val = attrs[attr].lower() if normalize_capitalisation else attrs[attr]
+        attr_val = attrs[attr].lower() if kwargs['normalize_capitalisation'] else attrs[attr]
 
         if attr_val not in freq_d:
             freq_d[attr_val] = 1
@@ -52,8 +55,7 @@ def get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, rest
 
         return None
 
-    scan_xml_and_execute(file, lambda xml_elem: increment_attr_count(xml_elem), restrict_to_nodes=nodes, verbose=verbose)
+    scan_xml_and_execute(file, lambda xml_elem: increment_attr_count(xml_elem), restrict_to_nodes=nodes,
+                         verbose=kwargs['verbose'])
 
     return freq_d
-
-
