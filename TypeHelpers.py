@@ -2,6 +2,9 @@ from string import punctuation
 from operator import itemgetter
 
 
+def is_simple_list(l):
+    return isinstance(l, list) or isinstance(l, tuple)
+
 def clean_simple_dict(simple_dict, side='keys', **kwargs):
     default_params = {'rm_only_punct': False, 'rm_contains_punct': False, 'rm_only_digits': False,
                       'rm_contains_digits': False, 'rm_only_nonan': False, 'rm_contains_nonan': False}
@@ -33,24 +36,28 @@ def clean_simple_dict(simple_dict, side='keys', **kwargs):
     clean_dict = {}
 
     for key, val in simple_dict.items():
-        if kwargs['rm_only_nonan'] and ((side == 'keys' and only_contains(key, 'nonan')) or
-                                        (side == 'values' and only_contains(val, 'nonan'))):
+        # If key or value is tuple, the first item of the tuple will be used instead
+        simple_key = key[0] if is_simple_list(key) else key
+        simple_val = val[0] if is_simple_list(val) else val
+
+        if kwargs['rm_only_nonan'] and ((side == 'keys' and only_contains(simple_key, 'nonan')) or
+                                        (side == 'values' and only_contains(simple_val, 'nonan'))):
             continue
-        elif kwargs['rm_only_punct'] and ((side == 'keys' and only_contains(key, 'punct')) or
-                                          (side == 'values' and only_contains(val, 'punct'))):
+        elif kwargs['rm_only_punct'] and ((side == 'keys' and only_contains(simple_key, 'punct')) or
+                                          (side == 'values' and only_contains(simple_val, 'punct'))):
             continue
         # Note that this only passes on positive integers. Floats and negative integers will fall through!
-        elif kwargs['rm_only_digits'] and ((side == 'keys' and key.isdigit()) or
-                                           (side == 'value' and val.isdigit())):
+        elif kwargs['rm_only_digits'] and ((side == 'keys' and simple_key.isdigit()) or
+                                           (side == 'value' and simple_val.isdigit())):
             continue
-        elif kwargs['rm_contains_nonan'] and ((side == 'keys' and contains(key, 'nonan')) or
-                                              (side == 'values' and contains(val, 'nonan'))):
+        elif kwargs['rm_contains_nonan'] and ((side == 'keys' and contains(simple_key, 'nonan')) or
+                                              (side == 'values' and contains(simple_val, 'nonan'))):
             continue
-        elif kwargs['rm_contains_digits'] and ((side == 'keys' and contains(key, 'digit')) or
-                                               (side == 'values' and contains(val, 'digit'))):
+        elif kwargs['rm_contains_digits'] and ((side == 'keys' and contains(simple_key, 'digit')) or
+                                               (side == 'values' and contains(simple_val, 'digit'))):
             continue
-        elif kwargs['rm_contains_punct'] and ((side == 'keys' and contains(key, 'punct')) or
-                                              (side == 'values' and contains(val, 'punct'))):
+        elif kwargs['rm_contains_punct'] and ((side == 'keys' and contains(simple_key, 'punct')) or
+                                              (side == 'values' and contains(simple_val, 'punct'))):
             continue
 
         clean_dict[key] = val

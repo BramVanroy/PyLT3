@@ -1,5 +1,6 @@
 from xml.etree.ElementTree import iterparse
-from TypeHelpers import verify_kwargs
+
+from .TypeHelpers import verify_kwargs
 
 
 def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
@@ -30,7 +31,7 @@ def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
 
 
 def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
-    default_params = {'normalize_capitalisation': False, 'pos': 'pos', 'verbose': 0}
+    default_params = {'normalize_capitalisation': False, 'pos': 'pos', 'include_pos': False, 'verbose': 0}
     kwargs = verify_kwargs(default_params, kwargs)
 
     if restrict_to_pos is not None and not isinstance(restrict_to_pos, list):
@@ -40,13 +41,22 @@ def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
 
     def increment_attr_count(elem):
         attrs = elem.attrib
+
         if attr not in attrs:
             return None
 
+        # If restric_to_pos, ensure postag in attr list, and postag value in restric_to_pos list
         if restrict_to_pos is not None and (kwargs['pos'] not in attrs or attrs[kwargs['pos']] not in restrict_to_pos):
             return None
 
+        # If required postag not in attr list, return
+        if kwargs['include_pos'] and kwargs['pos'] not in attrs:
+            return None
+
         attr_val = attrs[attr].lower() if kwargs['normalize_capitalisation'] else attrs[attr]
+
+        if kwargs['include_pos']:
+            attr_val = (attr_val, attrs[kwargs['pos']])
 
         if attr_val not in freq_d:
             freq_d[attr_val] = 1
@@ -58,4 +68,5 @@ def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
     scan_xml_and_execute(file, lambda xml_elem: increment_attr_count(xml_elem), restrict_to_nodes=nodes,
                          verbose=kwargs['verbose'])
 
+    # Returns dict with value=>count, or (value,pos)=>count, depending on include_pos parameter
     return freq_d

@@ -254,7 +254,8 @@ TODO: add examples
 
 ### `get_attr_frequencies`
 ```python
-get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, restrict_to_pos=None, pos='pos', verbose=0)
+get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, restrict_to_pos=None, pos='pos', 
+                     include_pos=False, verbose=0)
 ```
 
 #### Arguments and options

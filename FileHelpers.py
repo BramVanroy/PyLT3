@@ -1,6 +1,8 @@
-from os import scandir, path
+from os import scandir
+from pathlib import Path
 import locale
-from TypeHelpers import verify_kwargs
+
+from .TypeHelpers import verify_kwargs, is_simple_list
 
 
 def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs):
@@ -94,11 +96,8 @@ def concatenate_files(input_item, output_file, extension=None, remove_headers=0,
     with open(output_file, 'w', encoding=kwargs['encoding']) as fout:
         if is_file_list:
             for file in input_item:
-                file = path.normpath(file)
-                if path.isfile(file):
-                    append_to_file(file, fout)
-                else:
-                    raise FileNotFoundError(f"File {file} does not exist")
+                # Resolve, i.e. ensure rel->abs path, and append
+                append_to_file(Path(file).resolve(), fout)
         else:
             scan_dir_and_execute(input_item, lambda _file: append_to_file(_file, fout), recursive=kwargs['recursive'],
                                  verbose=verbose)
@@ -114,6 +113,11 @@ def print_simple_dict(simple_dict, output_file, **kwargs):
 
     with open(output_file, 'w', encoding=kwargs['encoding']) as fout:
         for key, val in simple_dict:
+            if is_simple_list(key):
+                key = "\t".join(key)
+            if is_simple_list(val):
+                val = "\t".join(val)
+
             fout.write(f"{key}\t{val}\n")
 
     return output_file
@@ -125,6 +129,13 @@ def print_tuplelist(tupelist, output_file, **kwargs):
 
     with open(output_file, 'w', encoding=kwargs['encoding']) as fout:
         for tupe in tupelist:
-            fout.write(f"{tupe[0]}\t{tupe[1]}\n")
+            key = tupe[0]
+            val = tupe[1]
+            if is_simple_list(key):
+                key = "\t".join(key)
+            if is_simple_list(val):
+                val = "\t".join(val)
+
+            fout.write(f"{key}\t{val}\n")
 
     return output_file

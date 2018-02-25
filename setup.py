@@ -1,7 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='PyLT3',
+    packages=find_packages(),
     version='0.2',
     url='https://github.com/BramVanroy/PyLT3',
     license='Apache License v2.0',
