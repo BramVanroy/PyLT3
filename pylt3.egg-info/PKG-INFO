@@ -1,0 +1,22 @@
+Metadata-Version: 1.2
+Name: pylt3
+Version: 0.2
+Summary: A collection of helper functions and NLP scripts
+Home-page: https://github.com/BramVanroy/pylt3
+Author: Bram Vanroy
+Author-email: bramvanroy@hotmail.com
+License: MIT
+Project-URL: Bug Reports, https://github.com/BramVanroy/pylt3/issues
+Project-URL: Source, https://github.com/BramVanroy/pylt3
+Description-Content-Type: UNKNOWN
+Description: During my time working on the PhD project PreDict, I have written and gathered a bunch of useful functions. They are collected here as part of the pylt3 package.
+Keywords: nlp xml file-handling helpers
+Platform: UNKNOWN
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Text Processing
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.6
+Requires-Python: >=3.6
