@@ -2,8 +2,9 @@ from string import punctuation
 from operator import itemgetter
 
 
-def is_simple_list(l):
-    return isinstance(l, list) or isinstance(l, tuple)
+def is_simple_list(li):
+    return isinstance(li, list) or isinstance(li, tuple)
+
 
 def clean_simple_dict(simple_dict, side='keys', **kwargs):
     default_params = {'rm_only_punct': False, 'rm_contains_punct': False, 'rm_only_digits': False,
