@@ -2,9 +2,9 @@
 Installation
 ============
 
-Installing PyLT3 (pronounced as *pilot* or *pilot-ee*) is as easy as 1, 2, *pylt3*!
+Installing PyLT3 (pronounced as *pilot* or *pilot-ee*) is as easy as 1, 2, *pylt3*! Haha... Ha... Using pip:
 
-`pip install pylt3`
+:code:`pip install pylt3`
 
 =====
 Notes
@@ -205,7 +205,7 @@ TODO: add arguments and options
 
 `sort_simple_dict`
 ==================
-.. code::
+.. code:: python
 
   sort_simple_dict(simple_dict, sort_on='keys', reverse=False)
 
@@ -219,9 +219,9 @@ Returns `list`:
 
 `verify_kwargs`
 ===============
-.. code::
+.. code:: python
 
-  verify_kwargs(defaults, kwargs)
+  verify_kwargs(defaults, kwargs, allow_none=None)
 
 
 Given a dictionary of default key-value pairs, and another dictionary with user-defined values, it is ensured that the
@@ -230,5 +230,6 @@ type of user-defined values is the same as the default value's type. The functio
 
 * `defaults`: a dictionary containing default keys and respective values
 * `kwargs`: a dictionary that contains the actual values that you want to set
+* `allow_none`: a list of parameter names that next to their default value type can also accept None (`default=None`)
 
 Returns `dict`: the result of merging two dictionaries together

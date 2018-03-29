@@ -24,7 +24,7 @@ def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
             print(proc_str, end="\r", flush=True)
 
         exec_func(elem)
-        node_i = node_i + 1
+        node_i += 1
         elem.clear()
 
     return None

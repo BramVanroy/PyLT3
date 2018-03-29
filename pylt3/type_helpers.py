@@ -104,6 +104,8 @@ def sort_iterable(iterable, sort_on=None, **kwargs):
 def verify_kwargs(defaults, kwargs, allow_none=None):
     if allow_none is None:
         allow_none = []
+    elif not isinstance(allow_none, list):
+        raise ValueError("Expected value None or a list for allow_none")
 
     for name, default_val in defaults.items():
         if name in kwargs:
