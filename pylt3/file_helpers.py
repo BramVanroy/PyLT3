@@ -52,7 +52,7 @@ def scan_file_and_execute(file, exec_func, verbose=0, **kwargs):
                 print(proc_str, end="\r", flush=True)
 
             exec_func(line, line_i)
-            line_i = line_i + 1
+            line_i += 1
 
     return None
 
@@ -89,7 +89,7 @@ def concatenate_files(input_item, output_file, extension=None, remove_headers=0,
                     if (files_concat_n == 1 and kwargs['retain_first_header']) or line_n > remove_headers:
                         _fout.write(line)
         else:
-            files_skipped_n = files_skipped_n+1
+            files_skipped_n += 1
 
         return None
 
