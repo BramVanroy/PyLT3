@@ -101,13 +101,17 @@ def sort_iterable(iterable, sort_on=None, **kwargs):
         raise TypeError(f"Unexpected type {type(iterable)} for iterable. Expected a list, tuple, or dict")
 
 
-def verify_kwargs(defaults, kwargs, allow_none=False):
+def verify_kwargs(defaults, kwargs, allow_none=None):
+    if allow_none is None:
+        allow_none = []
+
     for name, default_val in defaults.items():
         if name in kwargs:
             param = kwargs[name]
             param_type = type(default_val)
-            if (not isinstance(param, param_type)) or (allow_none and param is not None):
-                none_str = 'or None ' if allow_none else ''
+            if not (isinstance(param, param_type) or name in allow_none and param is None):
+                none_str = 'or None ' if name in allow_none else ''
+                print(param)
                 raise ValueError(f"Unexpected value {param} for {name}. A(n) {param_type.__name__} value "
                                  f"{none_str}is expected")
         else:
