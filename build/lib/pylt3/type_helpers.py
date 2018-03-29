@@ -66,29 +66,54 @@ def clean_simple_dict(simple_dict, side='keys', **kwargs):
     return clean_dict
 
 
-def sort_simple_dict(simple_dict, sort_on='keys', **kwargs):
-    default_params = {'reverse': False}
+def sort_iterable(iterable, sort_on=None, **kwargs):
+    default_params = {'reverse': False, 'num_as_num': False}
     kwargs = verify_kwargs(default_params, kwargs)
 
-    if sort_on == 'keys':
-        sorted_dict = sorted(simple_dict.items(), key=itemgetter(0), reverse=kwargs['reverse'])
-    elif sort_on == 'values':
-        sorted_dict = sorted(simple_dict.items(), key=itemgetter(1), reverse=kwargs['reverse'])
+    def _sort(i):
+        if kwargs['num_as_num']:
+            try:
+                if i is None:
+                    return sorted(iterable, key=float, reverse=kwargs['reverse'])
+                else:
+                    return dict(sorted(iterable.items(), key=lambda v: float(v[i]), reverse=kwargs['reverse']))
+            except TypeError:
+                raise TypeError(f"Tried parsing as float but could not. Only use num_as_num when all items that need "
+                                f"to be sorted can be converted to float")
+        else:
+            if i is None:
+                return sorted(iterable, key=str, reverse=kwargs['reverse'])
+            else:
+                return dict(sorted(iterable.items(), key=lambda v: str(v[i]), reverse=kwargs['reverse']))
+
+    if isinstance(iterable, list):
+        return _sort(None)
+    elif isinstance(iterable, tuple):
+        return tuple(_sort(None))
+    elif isinstance(iterable, dict):
+        if sort_on.lower() == 'keys':
+            return _sort(0)
+        elif sort_on.lower() == 'values':
+            return _sort(1)
+        else:
+            raise ValueError(f"Unexpected value {sort_on} for sort_on. When sorting a dict, use keys or values")
     else:
-        raise ValueError(f"Unexpected value {sort_on} for sort_on. Use keys or values")
-
-    # returns a list of tuples
-    # dicts are not sorted, unless using Python 3.6 or higher
-    return sorted_dict
+        raise TypeError(f"Unexpected type {type(iterable)} for iterable. Expected a list, tuple, or dict")
 
 
-def verify_kwargs(defaults, kwargs):
+def verify_kwargs(defaults, kwargs, allow_none=None):
+    if allow_none is None:
+        allow_none = []
+
     for name, default_val in defaults.items():
         if name in kwargs:
             param = kwargs[name]
             param_type = type(default_val)
-            if not isinstance(param, param_type):
-                raise ValueError(f"Unexpected value {param} for {name}. A(n) {param_type.__name__} value is expected")
+            if not (isinstance(param, param_type) or name in allow_none and param is None):
+                none_str = 'or None ' if name in allow_none else ''
+                print(param)
+                raise ValueError(f"Unexpected value {param} for {name}. A(n) {param_type.__name__} value "
+                                 f"{none_str}is expected")
         else:
             kwargs[name] = default_val
 

@@ -1,7 +1,7 @@
 from xml.etree.ElementTree import iterparse
+from collections import Counter
 
 from pylt3.type_helpers import verify_kwargs
-
 
 def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
     if verbose not in range(0, 3):
@@ -37,7 +37,7 @@ def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
     if restrict_to_pos is not None and not isinstance(restrict_to_pos, list):
         raise ValueError(f"Unexpected value {restrict_to_pos} for restrict_to_pos. None or a list expected")
 
-    freq_d = {}
+    freq_d = Counter()
 
     def increment_attr_count(elem):
         attrs = elem.attrib
@@ -58,10 +58,7 @@ def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
         if kwargs['include_pos']:
             attr_val = (attr_val, attrs[kwargs['pos']])
 
-        if attr_val not in freq_d:
-            freq_d[attr_val] = 1
-        else:
-            freq_d[attr_val] = freq_d[attr_val] + 1
+        freq_d[attr_val] += 1
 
         return None
 
