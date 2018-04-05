@@ -3,7 +3,8 @@ from collections import Counter
 
 from pylt3.type_helpers import verify_kwargs
 
-def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
+
+def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, events=None, verbose=0):
     if verbose not in range(0, 3):
         raise ValueError(f"Unexpected value {verbose} for verbose. 0, 1, or 2 expected")
 
@@ -11,7 +12,7 @@ def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
         raise ValueError(f"Unexpected value {restrict_to_nodes} for restrict_to_nodes. None or a list expected")
 
     node_i = 0
-    for _, elem in iterparse(file):
+    for event, elem in iterparse(file, events=events):
         if restrict_to_nodes is not None and elem.tag not in restrict_to_nodes:
             elem.clear()
             continue
@@ -23,7 +24,7 @@ def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0):
             proc_str += f" node {node_i+1}"
             print(proc_str, end="\r", flush=True)
 
-        exec_func(elem)
+        exec_func(event, elem)
         node_i += 1
         elem.clear()
 
