@@ -24,7 +24,13 @@ def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, keep_
                 src_line = unescape(src_line)
 
             if convert_unicode:
-                src_line = src_line.encode('utf-8').decode('unicode-escape')
+                # Directory paths in a text are seen as unicode sequences but will fail to decode, e.g. d:\udfs\math.dll
+                # In case of such failure, we'll pass on these sentences - we don't try to decode them but leave them
+                # as-is. Note that this may leave some unicode sequences alive in your text.
+                try:
+                    src_line = src_line.encode('utf-8').decode('unicode-escape')
+                except UnicodeDecodeError:
+                    pass
 
             src_doc = nlp(src_line)
             src_line = ' '.join(str(token) for token in src_doc)
