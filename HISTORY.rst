@@ -2,6 +2,12 @@
 History
 #######
 
+****************************
+0.5.0 (September 20th, 2018)
+****************************
+
+* Added :code:`preprocessing.py`. This still needs documentation, though.
+
 ***********************
 0.4.0 (April 4th, 2018)
 ***********************
