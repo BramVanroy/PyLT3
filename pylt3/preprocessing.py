@@ -1,8 +1,10 @@
 from pathlib import Path
+import re
+
 import spacy
 
 
-def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, keep_empty_lines=False, verbose=False):
+def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, verbose=False):
     src_path = Path(in_src).resolve()
     out_path = Path(out).resolve()
 
@@ -23,24 +25,19 @@ def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, keep_
             if convert_html:
                 src_line = unescape(src_line)
 
+            src_line = src_line.strip()
+
+            if src_line == '':
+                lines_removed += 1
+                continue
+
             if convert_unicode:
-                # Directory paths in a text are seen as unicode sequences but will fail to decode, e.g. d:\udfs\math.dll
-                # In case of such failure, we'll pass on these sentences - we don't try to decode them but leave them
-                # as-is. Note that this may leave some unicode sequences alive in your text.
-                try:
-                    src_line = src_line.encode('utf-8').decode('unicode-escape')
-                except UnicodeDecodeError:
-                    pass
+                src_line = unicode_replace(src_line)
 
             src_doc = nlp(src_line)
             src_line = ' '.join(str(token) for token in src_doc)
 
-            src_line = src_line.strip()
-
-            if keep_empty_lines or src_line != '':
-                fh_out.write(src_line + '\n')
-            else:
-                lines_removed += 1
+            fh_out.write(src_line + '\n')
 
     if verbose:
         end_credits = 'Done processing:'
@@ -54,3 +51,16 @@ def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, keep_
         end_credits += f'\n\nResults in {str(out_path)}'
 
         print(end_credits)
+
+
+def unicode_replace(s):
+    def repl(match):
+
+        match = match.group()
+        try:
+            return match.encode('utf-8').decode('unicode-escape')
+        except UnicodeDecodeError:
+            return match
+
+    return re.sub(r'(?<!\b[a-zA-Z]:)(\\u[0-9A-Fa-f]{4})', repl, s)
+
