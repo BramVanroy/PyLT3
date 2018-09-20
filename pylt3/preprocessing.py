@@ -12,8 +12,8 @@ def tokenize(in_src, out, lang, convert_html=False, convert_unicode=False, keep_
     # Only tokenize, don't execute the rest of the pipeline
     nlp = spacy.load(lang, disable=['parser', 'ner', 'tagger', 'textcat'])
 
-    with open(src_path, 'r', encoding='utf-8') as fh_in, \
-            open(out_path, 'w', encoding='utf-8') as fh_out:
+    with open(str(src_path), 'r', encoding='utf-8') as fh_in, \
+            open(str(out_path), 'w', encoding='utf-8') as fh_out:
 
         lines_removed = 0
         for line_idx, src_line in enumerate(fh_in):
