@@ -1,5 +1,4 @@
 from string import punctuation
-from operator import itemgetter
 
 
 def is_simple_list(li):

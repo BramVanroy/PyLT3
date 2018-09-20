@@ -63,7 +63,7 @@ def get_attr_frequencies(file, nodes, attr, restrict_to_pos=None, **kwargs):
 
         return None
 
-    scan_xml_and_execute(file, lambda xml_elem: increment_attr_count(xml_elem), restrict_to_nodes=nodes,
+    scan_xml_and_execute(file, lambda ev, xml_elem: increment_attr_count(xml_elem), restrict_to_nodes=nodes,
                          verbose=kwargs['verbose'])
 
     # Returns dict with value=>count, or (value,pos)=>count, depending on include_pos parameter
