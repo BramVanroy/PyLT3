@@ -3,6 +3,13 @@ History
 #######
 
 ****************************
+0.6.0 (September 21th, 2018)
+****************************
+
+* Renamed :code:`tokenize` to :code:`tokenize_file` in :code:`preprocessing.py`.
+* Added :code:`tokenize_string` in :code:`preprocessing.py`.
+
+****************************
 0.5.0 (September 20th, 2018)
 ****************************
 
