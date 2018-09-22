@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pylt3',
-    version='0.6.0',
+    version='0.6.5',
     description='A collection of helper functions and NLP scripts',
     long_description='During my time working on the PhD project PreDict, I have written and gathered a bunch of useful'
                      ' functions. They are collected here as part of the pylt3 package.',
