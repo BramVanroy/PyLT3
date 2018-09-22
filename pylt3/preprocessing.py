@@ -2,7 +2,8 @@ from pathlib import Path
 import re
 
 
-def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False, lowercase=False, verbose=False):
+def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False, keep_empty=True, lowercase=False,
+                  verbose=False):
     unescape = None
 
     src_path = Path(src).resolve()
@@ -20,7 +21,7 @@ def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False
     spacy_tok, nltk_tok = _set_tokenizer(tokenizer, lang, verbose)
 
     line_idx = 0
-    lines_removed = 0
+    empty_lines = 0
     with open(str(src_path), 'r', encoding='utf-8') as fh_in, \
             open(str(out_path), 'w', encoding='utf-8') as fh_out:
 
@@ -48,10 +49,12 @@ def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False
             if line != '':
                 fh_out.write(line + '\n')
             else:
-                lines_removed += 1
+                if keep_empty:
+                    fh_out.write('\n')
+                empty_lines += 1
 
     if verbose:
-        _print_tokenize_summary(out_path, line_idx, lines_removed, html, unicode, lowercase)
+        _print_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase)
 
 
 def tokenize_string(line, tokenizer=None, lang=None, html=False, unicode=False, lowercase=False, verbose=False):
@@ -90,7 +93,6 @@ def tokenize_string(line, tokenizer=None, lang=None, html=False, unicode=False, 
 
 def unicode_replace(s):
     def repl(match):
-
         match = match.group()
         try:
             return match.encode('utf-8').decode('unicode-escape')
@@ -107,7 +109,7 @@ def _get_spacy(lang):
     return nlp
 
 
-def _print_tokenize_summary(out_path, line_idx, lines_removed, html, unicode, lowercase):
+def _print_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase):
     end_credits = 'Done tokenizing:'
     if html:
         end_credits += '\n\t- unescaped HTML entities;'
@@ -115,10 +117,14 @@ def _print_tokenize_summary(out_path, line_idx, lines_removed, html, unicode, lo
         end_credits += '\n\t- replaced unicode sequences;'
     if lowercase:
         end_credits += '\n\t- lower-cased characters;'
-    if lines_removed > 0:
-        end_credits += f'\n\t- removed {lines_removed} empty lines;'
 
-    end_credits += f'\n\t- wrote {line_idx - lines_removed} lines in total.'
+    if empty_lines > 0:
+        if keep_empty:
+            end_credits += f'\n\t- kept {empty_lines} empty lines;'
+        else:
+            end_credits += f'\n\t- removed {empty_lines} empty lines;'
+
+    end_credits += f'\n\t- wrote {line_idx - empty_lines} lines in total.'
 
     end_credits += f'\n\nResults in {str(out_path)}'
 
