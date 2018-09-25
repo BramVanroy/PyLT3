@@ -3,6 +3,11 @@ History
 #######
 
 ****************************
+0.6.6 (September 25th, 2018)
+****************************
+* BUGFIX in :code:`print_simple_dict()` inside :code:`file_helpers`.
+
+****************************
 0.6.5 (September 22nd, 2018)
 ****************************
 * Added the :code:`keep_empty` option to :code:`tokenize_file` in :code:`preprocessing.py` so that empty lines are still

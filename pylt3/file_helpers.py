@@ -112,7 +112,7 @@ def print_simple_dict(simple_dict, output_file, **kwargs):
     kwargs = verify_kwargs(default_params, kwargs)
 
     with open(output_file, 'w', encoding=kwargs['encoding']) as fout:
-        for key, val in simple_dict:
+        for key, val in simple_dict.items():
             if is_simple_list(key):
                 key = "\t".join(key)
             if is_simple_list(val):
