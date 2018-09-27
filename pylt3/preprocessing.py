@@ -14,11 +14,12 @@ def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False
 
     if tokenizer is None or tokenizer == 'spacy':
         if lang is None:
-            raise TypeError('When using spaCy, you must specify the source and target languages. If you want to'
-                            ' solely rely on NLTK, specify nltk as the tokenizer')
+            raise TypeError("When using spaCy, you must specify the source and target languages. If you want to"
+                            " solely rely on NLTK, or even a naive tokenizer, specify 'nltk' or 'naive' as"
+                            " the tokenizer")
 
     # Set up tokenizer
-    spacy_tok, nltk_tok = _set_tokenizer(tokenizer, lang, verbose)
+    spacy_tok, nltk_tok, naive_tok = _set_tokenizer(tokenizer, lang, verbose)
 
     line_idx = 0
     empty_lines = 0
@@ -40,6 +41,9 @@ def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False
                 line = ' '.join(str(token) for token in doc)
             elif nltk_tok:
                 line = ' '.join(nltk_tok(line))
+            elif naive_tok:
+                line = re.sub(r"\b", " ", line)
+                line = re.sub(r" {2,}", " ", line)
 
             line = line.strip()
 
@@ -65,11 +69,12 @@ def tokenize_string(line, tokenizer=None, lang=None, html=False, unicode=False, 
 
     if tokenizer is None or tokenizer == 'spacy':
         if lang is None:
-            raise TypeError('When using spaCy, you must specify the source and target languages. If you want to'
-                            ' solely rely on NLTK, specify nltk as the tokenizer')
+            raise TypeError("When using spaCy, you must specify the source and target languages. If you want to"
+                            " solely rely on NLTK, or even a naive tokenizer, specify 'nltk' or 'naive' as"
+                            " the tokenizer")
 
     # Set up tokenizer
-    spacy_tok, nltk_tok = _set_tokenizer(tokenizer, lang, verbose)
+    spacy_tok, nltk_tok, naive_tok = _set_tokenizer(tokenizer, lang, verbose)
 
     if html:
         line = unescape(line)
@@ -82,6 +87,9 @@ def tokenize_string(line, tokenizer=None, lang=None, html=False, unicode=False, 
         line = ' '.join(str(token) for token in doc)
     elif nltk_tok:
         line = ' '.join(nltk_tok(line))
+    elif naive_tok:
+        line = re.sub(r"\b", " ", line)
+        line = re.sub(r" {2,}", " ", line)
 
     line = line.strip()
 
@@ -134,6 +142,7 @@ def _print_file_tokenize_summary(out_path, line_idx, empty_lines, html, unicode,
 def _set_tokenizer(tokenizer, lang, verbose):
     spacy_nlp = None
     word_tokenize = None
+    naive_tokenizer = False
 
     try:
         if tokenizer is None:
@@ -142,8 +151,14 @@ def _set_tokenizer(tokenizer, lang, verbose):
                     print('Using spaCy\'s tokenizer...', flush=True)
                 spacy_nlp = _get_spacy(lang)
             except (ModuleNotFoundError, ImportError, AttributeError, OSError) as e:
-                print(f'Failed to load spaCy: {e}...\nWill try to use NLTK instead', flush=True)
-                from nltk import word_tokenize
+                if verbose:
+                    print(f'Failed to load spaCy: {e}...\nWill try to use NLTK instead', flush=True)
+                try:
+                    from nltk import word_tokenize
+                except (ModuleNotFoundError, ImportError, AttributeError, OSError) as e:
+                    if verbose:
+                        print(f'Failed to load nltk: {e}...\nWill use naive tokenizer instead', flush=True)
+                    naive_tokenizer = True
         else:
             if tokenizer == 'spacy':
                 if verbose:
@@ -153,8 +168,12 @@ def _set_tokenizer(tokenizer, lang, verbose):
                 if verbose:
                     print('Using NLTK\'s tokenizer...', flush=True)
                 from nltk import word_tokenize
+            elif tokenizer == 'naive':
+                if verbose:
+                    print('Using naive tokenizer...', flush=True)
+                naive_tokenizer = True
             else:
-                raise ValueError('tokenizer has to be None (default), spacy, or nltk')
+                raise ValueError('tokenizer has to be None (default), spacy, nltk, or naive')
     except (ModuleNotFoundError, ImportError) as e:
         error = 'To tokenize your input, you need the spaCy library or NLTK installed.'
         if tokenizer is not None:
@@ -164,4 +183,4 @@ def _set_tokenizer(tokenizer, lang, verbose):
     except (OSError, AttributeError) as e:
         raise type(e)(f'Something went wrong while loading a tokenizer.\nError message: {e}')
 
-    return spacy_nlp, word_tokenize
+    return spacy_nlp, word_tokenize, naive_tokenizer

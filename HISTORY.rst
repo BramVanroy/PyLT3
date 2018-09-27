@@ -3,6 +3,13 @@ History
 #######
 
 ****************************
+0.7.0 (September 27th, 2018)
+****************************
+* Added the :code:`naive` tokenizer option when tokenizing in :code:`preprocessing.py`. This ensures that external
+  libraries need not be downloaded. The naive tokenizer does two things: replace word boundaries by a single
+  whitespace character, and substitute sequences of whitespaces with a single whitespace.
+
+****************************
 0.6.6 (September 25th, 2018)
 ****************************
 * BUGFIX in :code:`print_simple_dict()` inside :code:`file_helpers`.
@@ -10,8 +17,8 @@ History
 ****************************
 0.6.5 (September 22nd, 2018)
 ****************************
-* Added the :code:`keep_empty` option to :code:`tokenize_file` in :code:`preprocessing.py` so that empty lines are still
-  printed when required (default: :code:`True`).
+* Added the :code:`keep_empty` option to :code:`tokenize_file` in :code:`preprocessing.py` so that empty lines are
+  still printed when required (default: :code:`True`).
 
 ****************************
 0.6.0 (September 21th, 2018)
@@ -35,6 +42,6 @@ History
 0.3.0 (March 2nd, 2018)
 ***********************
 * First real release on PyPI.
-* Added optional parameter :code:`allow_none` to :code:`verify_kwargs` in :code:`type_helpers`. This allows a user to give a
-  list of names of the keyword arguments that can be None in addition to their default type.
+* Added optional parameter :code:`allow_none` to :code:`verify_kwargs` in :code:`type_helpers`. This allows a user to
+  give a list of names of the keyword arguments that can be None in addition to their default type.
 * TODO: complete and add examples
