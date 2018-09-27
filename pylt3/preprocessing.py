@@ -54,7 +54,7 @@ def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False
                 empty_lines += 1
 
     if verbose:
-        _print_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase)
+        _print_file_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase)
 
 
 def tokenize_string(line, tokenizer=None, lang=None, html=False, unicode=False, lowercase=False, verbose=False):
@@ -109,7 +109,7 @@ def _get_spacy(lang):
     return nlp
 
 
-def _print_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase):
+def _print_file_tokenize_summary(out_path, line_idx, empty_lines, html, unicode, keep_empty, lowercase):
     end_credits = 'Done tokenizing:'
     if html:
         end_credits += '\n\t- unescaped HTML entities;'
