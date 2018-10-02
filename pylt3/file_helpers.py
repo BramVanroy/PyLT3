@@ -82,7 +82,7 @@ def concatenate_files(input_item, output_file, extension=None, remove_headers=0,
         nonlocal files_concat_n, files_skipped_n
         if not extension or str(file_path).endswith(extension):
             files_concat_n = files_concat_n+1
-            with open(file_path, 'r') as fin:
+            with open(file_path, 'r', encoding=kwargs['encoding']) as fin:
                 line_n = 0
                 for line in fin:
                     line_n = line_n+1
