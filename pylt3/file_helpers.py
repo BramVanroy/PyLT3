@@ -80,7 +80,7 @@ def concatenate_files(input_item, output_file, extension=None, remove_headers=0,
 
     def append_to_file(file_path, _fout):
         nonlocal files_concat_n, files_skipped_n
-        if not extension or str(file_path).endswith(f".{extension}"):
+        if not extension or str(file_path).endswith(extension):
             files_concat_n = files_concat_n+1
             with open(file_path, 'r') as fin:
                 line_n = 0

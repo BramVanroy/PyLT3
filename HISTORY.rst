@@ -3,6 +3,12 @@ History
 #######
 
 ****************************
+0.7.1 (October 2nd, 2018)
+****************************
+* Changed the :code:`extension` parameter for :code:`concatenate_files` so that the dot has to be provided as well.
+  This allows you to basically look for filenames ending with any string rather than just a final extension.
+
+****************************
 0.7.0 (September 27th, 2018)
 ****************************
 * Added the :code:`naive` tokenizer option when tokenizing in :code:`preprocessing.py`. This ensures that external
