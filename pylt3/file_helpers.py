@@ -1,4 +1,3 @@
-from os import scandir
 from pathlib import Path
 import locale
 
@@ -19,7 +18,7 @@ def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs
     if verbose > 0:
         print(f"TRAVERSING {root}", flush=True)
 
-    for entry in scandir(root):
+    for entry in Path(root).glob('*'):
         if entry.is_dir() and entry.name not in exclude_dirs:
             if kwargs['recursive']:
                 # If truth-y value: keep value, otherwise use None
