@@ -4,7 +4,9 @@ Installation
 
 Installing PyLT3 (pronounced as *pilot* or *pilot-ee*) is as easy as 1, 2, *pylt3*! Haha... Ha... Using pip:
 
-:code:`pip install pylt3`
+.. code:: bash
+
+  pip install pylt3
 
 =====
 Notes
@@ -17,9 +19,9 @@ learn, so `pull requests`_, and `suggestions and issues`_ are always welcome.
 .. _pull requests: https://github.com/BramVanroy/PyLT3/pulls
 .. _suggestions and issues: https://github.com/BramVanroy/PyLT3/issues
 
-*******************
+*************************
 Note on :code:`exec_func`
-*******************
+*************************
 
 In :code:`exec_func` parameters in all functions below, it is recommended to use `lambda expressions`_ as a value for
 :code:`exec_func` when using a function with more than one argument. By default, the current file
@@ -66,12 +68,12 @@ Also see the `Python documentation on arguments`_.
 Modules
 =======
 
-**************
+********************
 :code:`file_helpers`
-**************
+********************
 
 :code:`scan_dir_and_execute`
-======================
+============================
 .. code:: python
 
   scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, recursive=True)
@@ -93,7 +95,7 @@ Returns :code:`None`
 
 
 :code:`scan_file_and_execute`
-=======================
+=============================
 .. code:: python
 
   scan_file_and_execute(file, exec_func, verbose=0, encoding=locale.getpreferredencoding())
@@ -115,7 +117,7 @@ Returns :code:`None`
 
 
 :code:`concatenate_files`
-===================
+=========================
 .. code:: python
 
   concatenate_files(input_item, output_file, extension=None, remove_headers=0, verbose=0, retain_first_header=False,
@@ -147,7 +149,7 @@ Returns :code:`str`: the path to the file that has just been created, i.e. :code
 
 
 :code:`print_simple_dict`
-===================
+=========================
 .. code:: python
 
   print_simple_dict(simple_dict, output_file, encoding=locale.getpreferredencoding())
@@ -164,12 +166,12 @@ is possible to sort the dictionary by keys or values, and reverse the order.
 Returns :code:`str`: the path to the file that has just been created, i.e. :code:`output_file`
 
 
-*************
+*******************
 :code:`xml_helpers`
-*************
+*******************
 
 :code:`scan_xml_and_execute`
-======================
+============================
 .. code:: python
 
   scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, verbose=0)
@@ -179,7 +181,7 @@ TODO: add arguments and options
 
 
 :code:`get_attr_frequencies`
-======================
+============================
 .. code:: python
 
   get_attr_frequencies(file, nodes, attr, normalize_capitalisation=False, restrict_to_pos=None, pos='pos',
@@ -189,12 +191,12 @@ TODO: add arguments and options
 TODO: add arguments and options
 
 
-**************
+********************
 :code:`type_helpers`
-**************
+********************
 
 :code:`clean_simple_dict`
-===================
+=========================
 .. code:: python
 
   clean_simple_dict(simple_dict, side='key', rm_only_punct=False, rm_contains_punct=False, rm_only_digits=False,
@@ -205,7 +207,7 @@ TODO: add arguments and options
 
 
 :code:`sort_simple_dict`
-==================
+========================
 .. code:: python
 
   sort_simple_dict(simple_dict, sort_on='keys', reverse=False)
@@ -219,7 +221,7 @@ TODO: add arguments and options
 Returns :code:`list`:
 
 :code:`verify_kwargs`
-===============
+=====================
 .. code:: python
 
   verify_kwargs(defaults, kwargs, allow_none=None)
