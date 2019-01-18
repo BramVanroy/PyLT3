@@ -1,5 +1,24 @@
 from pathlib import Path
 import re
+import locale
+
+from .type_helpers import verify_kwargs
+
+
+def normalize_digits(src, out, **kwargs):
+    default_params = {'src_encoding': locale.getpreferredencoding(), 'out_encoding': locale.getpreferredencoding()}
+    kwargs = verify_kwargs(default_params, kwargs)
+
+    src_path = Path(src).resolve()
+    out_path = Path(out).resolve()
+
+    digit_table = str.maketrans("0123456789", "1111111111")
+
+    with open(str(src_path), 'r', encoding=kwargs['src_encoding']) as fhin, \
+            open(str(out_path), 'w', encoding=kwargs['out_encoding']) as fhout:
+
+        for line in fhin:
+            fhout.write(line.translate(digit_table))
 
 
 def tokenize_file(src, out, tokenizer=None, lang=None, html=False, unicode=False, keep_empty=True, lowercase=False,

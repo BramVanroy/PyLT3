@@ -2,9 +2,14 @@
 History
 #######
 
-****************************
+**************************
+0.7.3 (January 18th, 2019)
+**************************
+* Added :code:`normalize_digits` to :code:`preprocessing`. This tiny function replaces all digits by ones in a file.
+
+*************************
 0.7.1 (October 2nd, 2018)
-****************************
+*************************
 * Changed the :code:`extension` parameter for :code:`concatenate_files` so that the dot has to be provided as well.
   This allows you to basically look for filenames ending with any string rather than just a final extension.
 

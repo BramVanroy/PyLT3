@@ -1,7 +1,7 @@
 from pathlib import Path
 import locale
 
-from pylt3.type_helpers import verify_kwargs, is_simple_list
+from .type_helpers import verify_kwargs, is_simple_list
 
 
 def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs):
