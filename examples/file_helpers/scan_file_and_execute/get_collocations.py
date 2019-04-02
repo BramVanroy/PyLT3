@@ -4,7 +4,7 @@ delimiting a keyword by tabs, you can easily do that with this function. In the 
 surrounded by tabs so that tools such as AntConc can easily recognise it.
 """
 
-from pylt3 import file_helpers
+from pylt3.utils import file_helpers
 
 import re
 from pathlib import Path

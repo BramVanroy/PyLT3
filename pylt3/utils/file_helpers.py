@@ -1,8 +1,22 @@
+import linecache
 from pathlib import Path
 import locale
+from math import floor
+
+from sklearn.model_selection import train_test_split
 
 from .type_helpers import verify_kwargs, is_simple_list
 
+
+def get_number_of_lines(fin):
+    pfin = Path(fin).resolve()
+
+    i = 0
+    with open(str(pfin)) as fhin:
+        for i, _ in enumerate(fhin, 1):
+            pass
+
+    return i
 
 def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs):
     default_params = {'recursive': True}
@@ -28,7 +42,7 @@ def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs
             if verbose > 1:
                 print(f"\tProcessing {entry.name}", flush=True)
 
-            exec_func(entry.path)
+            exec_func(str(entry))
 
     return None
 
@@ -56,7 +70,7 @@ def scan_file_and_execute(file, exec_func, verbose=0, **kwargs):
     return None
 
 
-def concatenate_files(input_item, output_file, extension=None, remove_headers=0, verbose=0, **kwargs):
+def concatenate_files(input_item, output_file, extension=None, separator=None, remove_headers=0, verbose=0, **kwargs):
     default_params = {'encoding': locale.getpreferredencoding(), 'recursive': True, 'retain_first_header': False}
     kwargs = verify_kwargs(default_params, kwargs)
 
@@ -87,6 +101,9 @@ def concatenate_files(input_item, output_file, extension=None, remove_headers=0,
                     line_n = line_n+1
                     if (files_concat_n == 1 and kwargs['retain_first_header']) or line_n > remove_headers:
                         _fout.write(line)
+
+            if separator:
+                _fout.write(str(separator))
         else:
             files_skipped_n += 1
 
@@ -138,3 +155,95 @@ def print_tuplelist(tupelist, output_file, **kwargs):
             fout.write(f"{key}\t{val}\n")
 
     return output_file
+
+
+def _get_split_idxs(data_size, shuffle, train_size, test_size, dev_size):
+    indxs = list(range(data_size))
+
+    train_dev_size = train_size + dev_size
+    train_idxs, test_idxs = train_test_split(indxs, train_size=train_dev_size, test_size=test_size, shuffle=shuffle)
+
+    if dev_size is not None:
+        train_idxs, dev_idxs = train_test_split(train_idxs, train_size=train_size, test_size=dev_size, shuffle=shuffle)
+    else:
+        dev_idxs = None
+
+    return train_idxs, test_idxs, dev_idxs
+
+
+def split_files(input_files, train_size, test_size, dev_size=None, output_exts=None, shuffle=False, output_dir=False):
+    split_sizes = list(filter(None, [train_size, test_size, dev_size]))
+
+    if output_exts is None:
+        output_exts = ['train', 'test'] if dev_size is None else ['train', 'test', 'dev']
+    elif len(split_sizes) != len(output_exts):
+        raise ValueError("The size of output_exts has to be the same as the number of sizes.")
+
+    # Get number of lines of input
+    input_paths = [Path(f).resolve() for f in input_files]
+    nro_lines = [get_number_of_lines(p) for p in input_paths]
+
+    # All input files must be the same size
+    if len(set(nro_lines)) > 1:
+        raise ValueError(f"The number of lines is not the same for your input files. The sizes are: {nro_lines}.")
+    else:
+        nro_lines = nro_lines[0]
+
+    # if all sizes are less than (or equal to) 1, then we're probably using percentages
+    percent_divide = all([True if x <= 1 else False for x in split_sizes])
+
+    # Get missing values. One of the given values can be -1 and its actual value will be calculated.
+    if split_sizes.count(-1) > 1:
+        raise ValueError("Only one size can be -1.")
+    elif split_sizes.count(-1) == 1:
+        unk_idx = split_sizes.index(-1)
+
+        # +1 to make up for the current -1
+        if percent_divide:
+            split_sizes[unk_idx] = 1 - sum(split_sizes) - 1
+        else:
+            split_sizes[unk_idx] = nro_lines - sum(split_sizes) - 1
+
+    if percent_divide and sum(split_sizes) != 1:
+        raise ValueError("When using percentages, the split has to sum up to 1.")
+    elif not percent_divide and sum(split_sizes) != nro_lines:
+        raise ValueError("When using absolute numbers, the split has to sum up to the total number of lines."
+                         f" Got {sum(split_sizes)}, expected {nro_lines}.")
+
+    if percent_divide:
+        # Gets absolute quantities
+        train_size = floor(nro_lines * split_sizes[0])
+        if dev_size is None:
+            test_size = nro_lines - train_size
+        else:
+            test_size = floor(nro_lines * split_sizes[1])
+            dev_size = nro_lines - train_size - test_size
+
+        split_sizes = list(filter(None, [train_size, test_size, dev_size]))
+
+        if sum(split_sizes) != nro_lines:
+            raise ValueError(f"Shape mismatch. The total sum of splits is {sum(split_sizes)} but expected {nro_lines}.")
+
+    train_idxs, test_idxs, dev_idxs = _get_split_idxs(nro_lines, shuffle, *split_sizes)
+    print(sorted(train_idxs))
+    print(sorted(test_idxs))
+    print(sorted(dev_idxs))
+    idxs = {'train': train_idxs, 'test': test_idxs, 'dev': dev_idxs}
+
+    # Look up the relevant lines, and write to file.
+    for pin in input_paths:
+        for ext_id, partition in enumerate(['train', 'test', 'dev']):
+            # Continue if dev is None
+            if idxs[partition] is None:
+                continue
+
+            pout = pin.parent
+
+            if output_dir:
+                pout = pout.joinpath(output_exts[ext_id])
+                pout.mkdir(exist_ok=True)
+
+            pout = pout.joinpath(pin.name + '.' + output_exts[ext_id])
+            with open(str(pout), 'w', encoding='utf-8') as fhout:
+                for line_id in idxs[partition]:
+                    fhout.write(linecache.getline(str(pin), line_id))

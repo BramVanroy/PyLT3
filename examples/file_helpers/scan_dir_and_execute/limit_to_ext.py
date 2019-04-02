@@ -1,7 +1,7 @@
 """
 If you want to execute a function only for files with a given extension, you could do something like this.
 """
-from pylt3 import file_helpers
+from pylt3.utils import file_helpers
 
 from pathlib import Path
 import sys

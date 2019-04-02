@@ -4,8 +4,24 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-spacy = "*"
 nltk = "*"
+mkl = "*"
+numpy = "*"
+scipy = "*"
+gensim = "*"
+h5py = "*"
+sklearn = "*"
+patterns = "*"
+pylt3 = {editable = true, path = "."}
+torch = {file = "https://download.pytorch.org/whl/cu100/torch-1.0.1-cp37-cp37m-win_amd64.whl"}
+skorch = "*"
+allennlp = "*"
+spacy = "*"
 
 [dev-packages]
+tornado = "*"
 pygments = "*"
+jupyter-contrib-nbextensions = "*"
+jupyter-nbextensions-configurator = "*"
+notebook = "==5.7.5"
+pattern = "*"

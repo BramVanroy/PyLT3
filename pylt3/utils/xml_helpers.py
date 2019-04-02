@@ -1,7 +1,7 @@
 from xml.etree.ElementTree import iterparse
 from collections import Counter
 
-from pylt3.type_helpers import verify_kwargs
+from pylt3.utils.type_helpers import verify_kwargs
 
 
 def scan_xml_and_execute(file, exec_func, restrict_to_nodes=None, events=None, verbose=0):

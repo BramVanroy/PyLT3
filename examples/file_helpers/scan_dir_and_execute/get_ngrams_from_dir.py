@@ -3,7 +3,7 @@ Given a directory, a filename to write to, and an integer, get a dictionary with
 For instance, if you want unigrams, bigrams, and trigrams then the integer should be `3`. The resulting ngrams are
 written to the given out file with their respective frequencies.
 """
-from pylt3 import file_helpers
+from pylt3.utils import file_helpers
 
 from nltk import word_tokenize
 from nltk.util import ngrams
