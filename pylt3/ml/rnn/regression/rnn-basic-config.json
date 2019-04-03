@@ -1,0 +1,75 @@
+{
+  "ms": {
+    "use": true,
+    "dim": 102,
+    "recurrent_layer": {
+      "dim": 200,
+      "bidirectional": true,
+      "type": "gru"
+    }
+  },
+  "w2v": {
+    "use": true,
+    "bidirectional": true,
+    "dim": 300,
+    "freeze": true,
+    "path": "C:\\Users\\Bram\\Downloads\\GoogleNews-vectors-negative300.bin",
+    "binary": true,
+    "recurrent_layer": {
+      "dim": 200,
+      "bidirectional": true,
+      "type": "gru"
+    }
+  },
+  "elmo": {
+    "use": false,
+    "options_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_options.json",
+    "weights_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5",
+    "dim": 1024,
+    "dropout": 0.2,
+    "linear_layer": {
+      "dim": 200
+    }
+  },
+  "bert": {
+    "use": false,
+    "name": "bert-base-uncased",
+    "freeze": "embeddings",
+    "dim": 768,
+    "concat_layers": [-1, -2, -3, -4],
+    "max_seq_len": 64,
+    "linear_layer": {
+      "dim": 200
+    }
+  },
+  "model": {
+    "class": "RegressionRNN",
+    "final_drop": 0.2,
+    "relu": {
+      "use": true,
+      "negative_slope": 0.01,
+      "type": "leaky"
+    }
+  },
+  "optimizer": "",
+  "scheduler": null,
+  "trainer": {
+    "files": {
+      "ms": {
+        "train": "C:\\wsl-shared\\cross-conll\\train\\conll-feats.train",
+        "valid": "C:\\wsl-shared\\cross-conll\\dev\\conll-feats.dev",
+        "test": "C:\\wsl-shared\\cross-conll\\test\\conll-feats.test"
+      },
+      "sentences": {
+        "train": "C:\\wsl-shared\\cross-conll\\train\\dpc.tok.norm.clean.cut.en.train",
+        "valid": "C:\\wsl-shared\\cross-conll\\dev\\dpc.tok.norm.clean.cut.en.dev",
+        "test": "C:\\wsl-shared\\cross-conll\\test\\dpc.tok.norm.clean.cut.en.test"
+      },
+      "labels": {
+        "train": "C:\\wsl-shared\\cross-conll\\train\\cross.txt",
+        "valid": "C:\\wsl-shared\\cross-conll\\dev\\cross.txt",
+        "test": "C:\\wsl-shared\\cross-conll\\test\\cross.txt"
+      }
+    }
+  }
+}

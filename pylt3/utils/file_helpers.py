@@ -18,6 +18,7 @@ def get_number_of_lines(fin):
 
     return i
 
+
 def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs):
     default_params = {'recursive': True}
     kwargs = verify_kwargs(default_params, kwargs)
@@ -247,3 +248,18 @@ def split_files(input_files, train_size, test_size, dev_size=None, output_exts=N
             with open(str(pout), 'w', encoding='utf-8') as fhout:
                 for line_id in idxs[partition]:
                     fhout.write(linecache.getline(str(pin), line_id))
+
+
+def verify_paths(*input_fs):
+    """ Ensure that input files exist. """
+    paths = []
+    for f in input_fs:
+        path = Path(f).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"Input file {str(f)} does not exist.")
+        paths.append(path)
+
+    if len(paths) == 1:
+        return paths[0]
+    else:
+        return paths

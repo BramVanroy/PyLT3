@@ -2,6 +2,8 @@ data/*
 tests
 apex
 pytorch-pretrained-BERT
+**/logs/
+*.pth
 
 .idea/**
 .idea/**/workspace.xml
