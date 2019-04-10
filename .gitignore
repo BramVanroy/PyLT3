@@ -4,6 +4,8 @@ apex
 pytorch-pretrained-BERT
 **/logs/
 *.pth
+Pipfile.lock
+
 
 .idea/**
 .idea/**/workspace.xml
