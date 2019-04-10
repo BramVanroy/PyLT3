@@ -96,6 +96,21 @@ class PreProcessor:
     def normalize_url_string(self, line, repl='@url@'):
         return re.sub(self.url_regex, repl, line)
 
+    def raw_spacy_tokenize_file(self, src, out, batch_size=1000):
+        """ Probably should be integrated in tokenize_file. """
+        src_path = Path(src).resolve()
+        out_path = Path(out).resolve()
+
+        with open(str(src_path), 'r', encoding='utf-8') as fh_in, \
+                open(str(out_path), 'w', encoding='utf-8') as fh_out:
+            lines_in = (line.strip() for line in fh_in)
+            for line_idx, doc in enumerate(self.spacy.pipe(lines_in, batch_size=batch_size)):
+                sentence = ' '.join([t.text for t in doc])
+                fh_out.write(sentence + '\n')
+
+                if line_idx % batch_size == 0:
+                    print(f"Processing line {line_idx}...\r", end='', flush=True)
+
     def tokenize_file(self, src, out, html=False, unicode=False, keep_empty=True, lowercase=False, verbose=False):
         src_path = Path(src).resolve()
         out_path = Path(out).resolve()
@@ -135,7 +150,7 @@ class PreProcessor:
             line = ' '.join(word_tokenize(line))
         elif self.tokenizer == 'naive':
             line = re.sub(r"\b", " ", line)
-            line = re.sub(r" {2,}", " ", line)
+            line = ' '.join(line.split())
 
         line = line.strip()
 
@@ -206,6 +221,7 @@ class PreProcessor:
     def _get_spacy(lang):
         import spacy
         try:
+            lang = 'en_core_web_sm' if lang == 'en' else lang
             nlp = spacy.load(lang, disable=['parser', 'ner', 'tagger', 'textcat'])
         except OSError:
             raise OSError(f"Something went wrong when trying to load spaCy's tokenizer."
