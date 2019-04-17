@@ -17,6 +17,8 @@ torch = {file = "https://download.pytorch.org/whl/cu100/torch-1.0.1-cp37-cp37m-w
 skorch = "*"
 allennlp = "*"
 spacy = "*"
+pandas = "*"
+lxml = "*"
 
 [dev-packages]
 tornado = "*"
@@ -25,3 +27,4 @@ jupyter-contrib-nbextensions = "*"
 jupyter-nbextensions-configurator = "*"
 notebook = "==5.7.5"
 pattern = "*"
+jupyter = "*"

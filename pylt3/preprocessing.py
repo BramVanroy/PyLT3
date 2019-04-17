@@ -14,6 +14,7 @@ class PreProcessor:
         self.unicode_regex = r'(?<!\b[a-zA-Z]:)(\\u[0-9A-Fa-f]{4})'
         self.punct_regex = r'(?<!\w)[^\sa-zA-Z0-9_]+(?!\w)'
         self.spacy = None
+        self.tagmap = None
         self.tokenizer = tokenizer
         self.lang = lang
 
@@ -27,6 +28,7 @@ class PreProcessor:
                     if verbose:
                         print('Using spaCy\'s tokenizer...', flush=True)
                     self.spacy = PreProcessor._get_spacy(lang)
+                    self.tagmap = self.spacy.Defaults.tag_map
                     self.tokenizer = 'spacy'
                 except (ModuleNotFoundError, ImportError, AttributeError, OSError) as e:
                     if verbose:
@@ -43,6 +45,7 @@ class PreProcessor:
                     if verbose:
                         print('Using spaCy\'s tokenizer...', flush=True)
                         self.spacy = PreProcessor._get_spacy(lang)
+                        self.tagmap = self.spacy.Defaults.tag_map
                         self.tokenizer = 'spacy'
                 elif tokenizer == 'nltk':
                     if verbose:
@@ -96,13 +99,17 @@ class PreProcessor:
     def normalize_url_string(self, line, repl='@url@'):
         return re.sub(self.url_regex, repl, line)
 
-    def raw_spacy_tokenize_file(self, src, out, batch_size=1000):
+    def raw_spacy_tokenize_file(self, src, dout, export_as='all', batch_size=1000):
         """ Probably should be integrated in tokenize_file. """
         src_path = Path(src).resolve()
-        out_path = Path(out).resolve()
+        pdout = Path(dout).resolve()
 
-        with open(str(src_path), 'r', encoding='utf-8') as fh_in, \
-                open(str(out_path), 'w', encoding='utf-8') as fh_out:
+        """ TODO """
+        # Probably want to create a generator that returns the lines_in below, but where you can specify the
+        # preprocessing steps that need to happen before yielding. So first normalize_url, strip, normalize_digits, etc.
+        # and then yield
+
+        with open(str(src_path), 'r', encoding='utf-8') as fh_in:
             lines_in = (line.strip() for line in fh_in)
             for line_idx, doc in enumerate(self.spacy.pipe(lines_in, batch_size=batch_size)):
                 sentence = ' '.join([t.text for t in doc])
@@ -217,6 +224,17 @@ class PreProcessor:
 
         print(f"Finished processing files, removed {nro_empty_lines} lines.")
 
+    def _get_morphology(self, tag):
+        """ Taken from spacy_conll. Probably should import from there. """
+        if not self.tagmap or tag not in self.tagmap:
+            return '_'
+        else:
+            feats = [f'{prop}={val}' for prop, val in self.tagmap[tag].items() if not PreProcessor._is_number(prop)]
+            if feats:
+                return '|'.join(feats)
+            else:
+                return '_'
+
     @staticmethod
     def _get_spacy(lang):
         import spacy
@@ -249,3 +267,11 @@ class PreProcessor:
         end_credits += f'\n\nResults in {str(out_path)}'
 
         print(end_credits)
+
+    @staticmethod
+    def _is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
