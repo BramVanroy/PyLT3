@@ -8,9 +8,9 @@ from typing import AnyStr, Optional, Union
 from gensim import models as gs_models
 
 
-logging.basicConfig(
-    format='[%(levelname)s] %(asctime)s: %(message)s',
-    level=logging.INFO)
+logging.basicConfig(datefmt='%d-%b %H:%M:%S',
+                    format='%(asctime)s - [%(levelname)s]: %(message)s',
+                    level=logging.INFO)
 
 
 class SentenceIterator:
@@ -61,7 +61,7 @@ def _get_config_args(config_p):
         cfg_args = {
             'input_file': cfg_parser.get('io', 'input_file', fallback=''),
             'output_file': cfg_parser.get('io', 'output_file', fallback=''),
-            'dims': cfg_parser.getint('word2vec', 'dims', fallback=100),
+            'dims': cfg_parser.getint('word2vec', 'dims', fallback=300),
             'epochs': cfg_parser.getint('word2vec', 'epochs', fallback=5),
             'min_count': cfg_parser.getint('word2vec', 'min_count', fallback=5),
             'window': cfg_parser.getint('word2vec', 'window', fallback=5),
@@ -69,10 +69,11 @@ def _get_config_args(config_p):
             'workers': cfg_parser.getint('other', 'workers', fallback=3)
         }
     else:
+        # Defaults
         cfg_args = {
             'input_file': '',
             'output_file': '',
-            'dims': 100,
+            'dims': 300,
             'epochs': 5,
             'min_count': 5,
             'window': 5,
@@ -85,7 +86,7 @@ def _get_config_args(config_p):
 
 def _get_vocab_counts(input_p, min_count, placeholder):
     """ Count the occurences of every word but add low-frequency words to their own key {placeholder}.
-        We do NOT do wait to do this when we create the modified sentences:
+        We do NOT wait to do this when we create the modified sentences:
         1. We want to retrain the generator-type of our sentence iterator, i.e. only yield once every sentence
         2. gensim needs the vocabulary (low-freq removed, placeholder added) at training START so it must be ready. """
     vocab = Counter()
@@ -107,6 +108,7 @@ def _get_vocab_counts(input_p, min_count, placeholder):
                 vocab[word] += 1
 
     # Do the low-frequency clean-up
+    logging.info('PROGRESS: finding low-frequency words...')
     unk_freqs = [(words, counts) for words, counts in vocab.items() if counts < min_count]
     unk_words, unk_counts = zip(*unk_freqs)
 
@@ -163,26 +165,27 @@ def train_word2vec(input_file: Union[Path, AnyStr], output_file: Union[Path, Any
         # the {placeholder} key
         vocab = _get_vocab_counts(input_file, min_count, placeholder=replace_unk)
         sentences = SentenceIterator(input_file, vocab, replace_unk)
-        model = gs_models.Word2Vec(
-            size=dims,
-            window=window,
-            min_count=min_count,
-            iter=epochs,
-            workers=workers)
+        model = gs_models.Word2Vec(size=dims,
+                                   window=window,
+                                   min_count=min_count,
+                                   iter=epochs,
+                                   workers=workers)
 
         model.build_vocab_from_freq(vocab)
-        model.train(sentences, total_examples=model.corpus_count, total_words=sum(vocab.values()), epochs=model.epochs)
+        model.train(sentences,
+                    total_examples=model.corpus_count,
+                    total_words=sum(vocab.values()),
+                    epochs=model.epochs)
 
     else:
         sentences = gs_models.word2vec.LineSentence(str(input_file))
 
-        model = gs_models.Word2Vec(
-            sentences=sentences,
-            size=dims,
-            window=window,
-            min_count=min_count,
-            iter=epochs,
-            workers=workers)
+        model = gs_models.Word2Vec(sentences=sentences,
+                                   size=dims,
+                                   window=window,
+                                   min_count=min_count,
+                                   iter=epochs,
+                                   workers=workers)
 
     # save only the word vectors in text format
     model.wv.save_word2vec_format(str(output_file), binary=False)
