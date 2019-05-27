@@ -108,16 +108,19 @@ def _get_vocab_counts(input_p, min_count, placeholder):
                 vocab[word] += 1
 
     # Do the low-frequency clean-up
-    logging.info('PROGRESS: finding low-frequency words...')
-    unk_freqs = [(words, counts) for words, counts in vocab.items() if counts < min_count]
-    unk_words, unk_counts = zip(*unk_freqs)
+    if min_count > 1:
+        logging.info('PROGRESS: finding low-frequency words...')
+        unk_freqs = [(words, counts) for words, counts in vocab.items() if counts < min_count]
 
-    # remove unknown words
-    for unk_word in unk_words:
-        vocab.pop(unk_word, None)
+        if len(unk_freqs) > 0:
+            unk_words, unk_counts = zip(*unk_freqs)
 
-    # add {placeholder} with unk counts
-    vocab[placeholder] = sum(unk_counts)
+            # remove unknown words
+            for unk_word in unk_words:
+                vocab.pop(unk_word, None)
+
+            # add {placeholder} with unk counts
+            vocab[placeholder] = sum(unk_counts)
 
     logging.info(f"DONE: generating vocab frequency. {vocab[placeholder]} unknown words.")
     return vocab
