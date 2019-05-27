@@ -5,6 +5,7 @@ pytorch-pretrained-BERT
 **/logs/
 *.pth
 Pipfile.lock
+pylt3/ml/data/*
 
 
 .idea/**
