@@ -27,7 +27,7 @@ class PreProcessor:
                 try:
                     if verbose:
                         print('Using spaCy\'s tokenizer...', flush=True)
-                    self.spacy = PreProcessor._get_spacy(lang)
+                    self.spacy = self._get_spacy(lang)
                     self.tagmap = self.spacy.Defaults.tag_map
                     self.tokenizer = 'spacy'
                 except (ModuleNotFoundError, ImportError, AttributeError, OSError) as e:
@@ -44,7 +44,7 @@ class PreProcessor:
                 if tokenizer == 'spacy':
                     if verbose:
                         print('Using spaCy\'s tokenizer...', flush=True)
-                        self.spacy = PreProcessor._get_spacy(lang)
+                        self.spacy = self._get_spacy(lang)
                         self.tagmap = self.spacy.Defaults.tag_map
                         self.tokenizer = 'spacy'
                 elif tokenizer == 'nltk':
@@ -98,25 +98,6 @@ class PreProcessor:
 
     def normalize_url_string(self, line, repl='@url@'):
         return re.sub(self.url_regex, repl, line)
-
-    def raw_spacy_tokenize_file(self, src, dout, export_as='all', batch_size=1000):
-        """ Probably should be integrated in tokenize_file. """
-        src_path = Path(src).resolve()
-        pdout = Path(dout).resolve()
-
-        """ TODO """
-        # Probably want to create a generator that returns the lines_in below, but where you can specify the
-        # preprocessing steps that need to happen before yielding. So first normalize_url, strip, normalize_digits, etc.
-        # and then yield
-
-        with open(str(src_path), 'r', encoding='utf-8') as fh_in:
-            lines_in = (line.strip() for line in fh_in)
-            for line_idx, doc in enumerate(self.spacy.pipe(lines_in, batch_size=batch_size)):
-                sentence = ' '.join([t.text for t in doc])
-                fh_out.write(sentence + '\n')
-
-                if line_idx % batch_size == 0:
-                    print(f"Processing line {line_idx}...\r", end='', flush=True)
 
     def tokenize_file(self, src, out, html=False, unicode=False, keep_empty=True, lowercase=False, verbose=False):
         src_path = Path(src).resolve()
