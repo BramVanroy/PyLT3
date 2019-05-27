@@ -5,10 +5,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import pearsonr
 import torch
-from torch.nn.utils.rnn import pack_padded_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pack_sequence
 from torch.utils.data import DataLoader
 
+from allennlp.modules.elmo import batch_to_ids
+from pytorch_pretrained_bert.tokenization import BertTokenizer
+
+
 from ..LazyTextDataset import LazyTextDataset
+
+# Make results reproducible
+torch.manual_seed(3)
+torch.backends.cudnn.deterministic = True
+np.random.seed(3)
 
 # Run all numpy warnings as errors to catch issues with pearsonr
 np.seterr(all='raise')
@@ -18,6 +27,7 @@ class RegressionTrainer:
     def __init__(self,
                  ms,
                  w2v,
+                 fasttext,
                  elmo,
                  bert,
                  model=None,
@@ -30,23 +40,27 @@ class RegressionTrainer:
                  batch_size=(64, 64, 64)):
         logging.info(f"Using torch {torch.__version__}")
 
-        self.datasets, self.dataloaders = RegressionTrainer._set_data_loaders(train_files,
-                                                                              valid_files,
-                                                                              test_files,
-                                                                              batch_size)
-        self.device = RegressionTrainer._set_device()
+        self.datasets, self.dataloaders = self._set_data_loaders(train_files,
+                                                                 valid_files,
+                                                                 test_files,
+                                                                 batch_size)
+        self.batch_size = batch_size
+        self.device = self._set_device()
 
         self.ms = ms
         self.w2v = w2v
+        self.fasttext = fasttext
         self.elmo = elmo
+
         self.bert = bert
-        self.bert['tokenizer'] = RegressionTrainer.init_bert_tokenizer(bert) if bert['use'] else None
-        self.use_sentences = any((w2v['use'], elmo['use'], bert['use']))
+        self.bert['tokenizer'] = self.init_bert_tokenizer(bert) if bert['use'] else None
+
+        self.use_sentences = any((w2v['use'], fasttext['use'], elmo['use'], bert['use']))
 
         self.model = model
-        self.criterion = None
-        self.optimizer = None
-        self.scheduler = None
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.scheduler = scheduler
         self.checkpoint_f = None
 
     @staticmethod
@@ -72,11 +86,11 @@ class RegressionTrainer:
             logging.info(f"Test set size: {len(datasets['test'])}")
 
         dataloaders = {
-            'train': DataLoader(datasets['train'], batch_size=batch_size[0], shuffle=True)
+            'train': DataLoader(datasets['train'], batch_size=batch_size[0], shuffle=False)
             if train_files is not None else None,
-            'valid': DataLoader(datasets['valid'], batch_size=batch_size[1], shuffle=True)
+            'valid': DataLoader(datasets['valid'], batch_size=batch_size[1], shuffle=False)
             if valid_files is not None else None,
-            'test': DataLoader(datasets['test'], batch_size=batch_size[2], shuffle=True)
+            'test': DataLoader(datasets['test'], batch_size=batch_size[2], shuffle=False)
             if test_files is not None else None
         }
 
@@ -88,9 +102,9 @@ class RegressionTrainer:
 
         if device.type == 'cuda':
             device_id = torch.cuda.current_device()
-            logging.info(f"Using GPU {torch.cuda.get_device_name(device_id)}...")
+            logging.info(f"Using GPU {torch.cuda.get_device_name(device_id)}")
         else:
-            logging.info('Using CPU...')
+            logging.info('Using CPU')
 
         return device
 
@@ -127,7 +141,7 @@ class RegressionTrainer:
         lengths = torch.LongTensor([len(s) for s in seqs])
 
         # Create zero-only dataset                 
-        seq_tensor = torch.zeros(len(seqs), lengths.max(), self.ms_dim)
+        seq_tensor = torch.zeros(len(seqs), lengths.max(), self.ms['dim'])
 
         # Fill in real values                 
         for idx, (seq, seqlen) in enumerate(zip(seqs, lengths)):
@@ -145,32 +159,61 @@ class RegressionTrainer:
     def prepare_w2v(self, data):
         """ Gets the word2vec ID of the tokens.
             Input is a batch of sentences, consisting of tokens. """
-        idxs = []
-        # Get size of longest sequence
-        max_length = max([len(seq) for seq in data])
+        def get_word_idx(word):
+            try:
+                return self.w2v['vocab'][word].index
+            except KeyError:
+                if self.w2v['unknown_token']:
+                    try:
+                        return self.w2v['vocab'][self.w2v['unknown_token']].index
+                    except KeyError:
+                        raise KeyError("The specified 'unknown_token' is not present in your word2vec model.")
+                else:
+                    raise KeyError('A word in your training set is not present in your word2vec model.')
 
-        for seq in data:
-            tok_idxs = []
-            for word in seq:
-                try:
-                    tok_idxs.append(self.w2v['vocab'][word].index)
-                except KeyError:
-                    tok_idxs.append(self.w2v['vocab']['@unk@'].index)
+        seqs = [np.array(list(map(get_word_idx, sent))) for sent in data]
 
-            # Pad current sequence if smaller than largest sequence
-            seq_length = len(seq)
-            if seq_length < max_length:
-                tok_idxs.extend([self.w2v['vocab']['@pad@'].index] * (max_length - seq_length))
+        # Get the length of the not-padded sequences
+        lengths = torch.LongTensor([len(s) for s in seqs])
 
-            idxs.append(tok_idxs)
+        # fill tensor with index of padding
+        seq_tensor = torch.full((len(seqs), lengths.max().item()), self.w2v['padding_idx'])
 
-        idxs = torch.LongTensor(idxs)
-        return idxs
+        # Fill in real values
+        for idx, (seq, seqlen) in enumerate(zip(seqs, lengths)):
+            seq_tensor[idx, :seqlen] = torch.FloatTensor(seq)
+
+        return seq_tensor.long()
+
+    def prepare_fasttext(self, data):
+        """ Converts an input list of lists of tokens to packed sequences of fastText vectors. """
+        # Data is a 'text' of 'sentences'
+        seqs = [np.array(list(map(self.fasttext['model'].get_word_vector, sent))) for sent in data]
+
+        # Get the length of the not-padded sequences
+        lengths = torch.LongTensor([len(s) for s in seqs])
+
+        # Create zero-only dataset
+        seq_tensor = torch.zeros(len(seqs), lengths.max(), self.fasttext['dim'])
+
+        # Fill in real values
+        for idx, (seq, seqlen) in enumerate(zip(seqs, lengths)):
+            seq_tensor[idx, :seqlen] = torch.FloatTensor(seq)
+
+        # Gets back sorted lengths and the indices of sorted items
+        lengths, sorted_idxs = torch.sort(lengths, dim=0, descending=True)
+        # Sort tensor by using sorted indices
+        seq_tensor = seq_tensor[sorted_idxs, :, :]
+        # Pack sequences
+        packed_seqs = pack_padded_sequence(seq_tensor, lengths, batch_first=True)
+
+        return packed_seqs, sorted_idxs
 
     @staticmethod
     def prepare_elmo(sentences):
         # Add <S> and </S> tokens to sentence
-        # See https://github.com/allenai/allennlp/blob/master/tutorials/how_to/elmo.md#notes-on-statefulness-and-non-determinism        
+        # See https://github.com/allenai/allennlp/blob/master/tutorials/how_to/elmo.md
+        # #notes-on-statefulness-and-non-determinism
         elmo_sentences = []
         for s in sentences:
             elmo_sentences.append(['<S>', *s, '</S>'])
@@ -208,23 +251,26 @@ class RegressionTrainer:
             all_input_mask.append(input_mask)
 
         all_input_ids = torch.LongTensor(all_input_ids)
-        all_input_mask = torch.LongTensor(all_input_mask)
+        all_input_mask = torch.FloatTensor(all_input_mask)
 
         return all_input_ids, all_input_mask
 
     @staticmethod
     def _plot_training(train_losses, valid_losses):
-        plt.subplot(1, 2, 1)
+        fig = plt.figure(dpi=300)
         plt.plot(train_losses, label='Training loss')
         plt.plot(valid_losses, label='Validation loss')
         plt.xlabel('epochs')
         plt.legend(frameon=False)
         plt.title('Loss progress')
-
         plt.show()
-        plt.savefig('progress.png')
 
-    def train(self, epochs=10, checkpoint_f='checkpoint.pth', log_update_freq=0, patience=None):
+        return fig
+
+    def train(self, epochs=10, checkpoint_f='checkpoint.pth', log_update_freq=0, patience=0):
+        """ log_update_freq: show a log message every X percent in a batch's progress.
+            E.g. for a value of 25, 4 messages will be printed per batch (100/25=4)
+        """
         logging.info('Training started.')
         train_start = time.time()
 
@@ -281,7 +327,7 @@ class RegressionTrainer:
                     logging.warning(f"!! Training loss is lte validation loss. Might be overfitting!")
 
             # Early-stopping
-            if patience is not None:
+            if patience:
                 if (epoch - last_saved_epoch) == patience:
                     logging.info(f"Stopping early at epoch {epoch} (patience={patience})...")
                     break
@@ -290,11 +336,13 @@ class RegressionTrainer:
             if self.scheduler is not None:
                 self.scheduler.step(valid_loss)
 
-        RegressionTrainer._plot_training(train_losses, valid_losses)
+        fig = self._plot_training(train_losses, valid_losses)
 
         logging.info(f"Training completed in {(time.time() - train_start):.0f} seconds"
                      f"\nMin. valid loss: {valid_loss_min}\nLast saved epoch: {last_saved_epoch}"
                      f"\nPerformance: {len(self.datasets['train']) // total_train_time:.0f} sentences/s")
+
+        return self.checkpoint_f, fig
 
     def _process(self, do, log_update_freq, epoch=None):
         if do not in ('train', 'valid', 'test'):
@@ -323,14 +371,13 @@ class RegressionTrainer:
 
             # 1. Data prep
             if self.ms['use']:
-                ms = data[0]
-                if self.use_sentences:
-                    sentence = data[1]
-            elif self.use_sentences:
-                sentence = data[0]
+                ms = data['ms']
+            if self.use_sentences:
+                sentences = data['sentences']
 
-            target = data[-1]
+            target = data['labels']
 
+            sorted_ids = None
             # Convert ms features to int array
             if self.ms['use']:
                 ms, sorted_ids = self.prepare_ms(ms)
@@ -340,28 +387,34 @@ class RegressionTrainer:
 
             # Convert sentence to token array
             if self.use_sentences:
-                sentence = self.prepare_lines(sentence, split_on=' ')
+                sentences = self.prepare_lines(sentences, split_on=' ')
+
+            if self.fasttext['use']:
+                fasttext_vec, sorted_ids = self.prepare_fasttext(sentences)
+                fasttext_vec = fasttext_vec.to(self.device)
+            else:
+                fasttext_vec = None
 
             # Convert tokens to word2vec IDs
             if self.w2v['use']:
-                w2v_ids = self.prepare_w2v(sentence)
-                w2v_ids = w2v_ids[sorted_ids] if ms is not None else w2v_ids
+                w2v_ids = self.prepare_w2v(sentences)
+                w2v_ids = w2v_ids[sorted_ids] if sorted_ids is not None else w2v_ids
                 w2v_ids = w2v_ids.to(self.device)
             else:
                 w2v_ids = None
 
             if self.elmo['use']:
-                elmo_sentence = RegressionTrainer.prepare_elmo(sentence)
+                elmo_sentence = self.prepare_elmo(sentences)
                 elmo_ids = batch_to_ids(elmo_sentence)
-                elmo_ids = elmo_ids[sorted_ids] if ms is not None else elmo_ids
+                elmo_ids = elmo_ids[sorted_ids] if sorted_ids is not None else elmo_ids
                 elmo_ids = elmo_ids.to(self.device)
             else:
                 elmo_ids = None
 
             if self.bert['use']:
-                bert_ids, bert_mask = self.prepare_bert(sentence)
-                bert_ids = bert_ids[sorted_ids] if ms is not None else bert_ids
-                bert_mask = bert_mask[sorted_ids] if ms is not None else bert_mask
+                bert_ids, bert_mask = self.prepare_bert(sentences)
+                bert_ids = bert_ids[sorted_ids] if sorted_ids is not None else bert_ids
+                bert_mask = bert_mask[sorted_ids] if sorted_ids is not None else bert_mask
 
                 bert_ids = bert_ids.to(self.device)
                 bert_mask = bert_mask.to(self.device)
@@ -372,14 +425,14 @@ class RegressionTrainer:
             # Convert target to float array
             target = torch.FloatTensor(self.prepare_lines(target, cast_to=float))
             # Sort targets in-line with previous sorting
-            target = target[sorted_ids] if ms is not None else target
+            target = target[sorted_ids] if sorted_ids is not None else target
             # Get current batch size
             curr_batch_size = target.size(0)
 
             target = target.to(self.device)
 
             # 2. Predictions
-            pred = self.model(ms, w2v_ids, elmo_ids, bert_input)
+            pred = self.model(ms, w2v_ids, fasttext_vec, elmo_ids, bert_input)
             loss = self.criterion(pred, target)
 
             # 3. Optimise during training
@@ -423,3 +476,5 @@ class RegressionTrainer:
 
         logging.info(f"Testing completed in {(time.time() - test_start):.0f} seconds"
                      f"\nLoss: {test_loss:.6f}\t Pearson: {test_pearson}\n")
+
+        return test_loss, test_pearson[0]

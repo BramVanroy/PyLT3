@@ -1,24 +1,38 @@
 {
   "ms": {
     "use": true,
-    "dim": 102,
+    "dim": 147,
     "recurrent_layer": {
       "dim": 200,
       "bidirectional": true,
-      "type": "gru"
+      "type": "gru",
+      "dropout": 0
     }
   },
   "w2v": {
-    "use": true,
-    "bidirectional": true,
-    "dim": 300,
+    "use": false,
+    "dim": 147,
     "freeze": true,
-    "path": "C:\\Users\\Bram\\Downloads\\GoogleNews-vectors-negative300.bin",
-    "binary": true,
+    "unknown_token": "@unk@",
+    "padding_idx": "add",
+    "path": "C:\\wsl-shared\\arda-dataset\\W2V_features\\dpc+news.norm.tok.low.word2vec.dim147.txt",
+    "binary": false,
     "recurrent_layer": {
       "dim": 200,
       "bidirectional": true,
-      "type": "gru"
+      "type": "gru",
+      "dropout": 0
+    }
+  },
+  "fasttext": {
+    "use": false,
+    "dim": 147,
+    "path": "C:\\Python\\projects\\PyLT3\\data\\dpc\\prep\\dpc+news.en.ft-147dim.bin",
+    "recurrent_layer": {
+      "dim": 200,
+      "bidirectional": true,
+      "type": "gru",
+      "dropout": 0
     }
   },
   "elmo": {
@@ -26,7 +40,7 @@
     "options_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_options.json",
     "weights_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5",
     "dim": 1024,
-    "dropout": 0.2,
+    "dropout": 0,
     "linear_layer": {
       "dim": 200
     }
@@ -44,31 +58,47 @@
   },
   "model": {
     "class": "RegressionRNN",
-    "final_drop": 0.2,
+    "final_drop": 0,
     "relu": {
-      "use": true,
-      "negative_slope": 0.01,
+      "use": false,
+      "negative_slope": 0.0001,
       "type": "leaky"
     }
   },
-  "optimizer": "",
-  "scheduler": null,
+  "criterion": "mse",
+  "optimizer": {
+    "name": "adam",
+    "lr": 0.001,
+    "weight_decay": 0,
+    "eps": 1e-07
+  },
+  "scheduler": {
+    "use": false,
+    "name": "reducelronplateau",
+    "factor": 0.1,
+    "patience": 5,
+    "verbose": true
+  },
   "trainer": {
+    "epochs": 200,
+    "patience": 15,
+    "log_update_freq": 25,
+    "output_dir": "C:\\wsl-shared\\clin-output",
     "files": {
-      "ms": {
-        "train": "C:\\wsl-shared\\cross-conll\\train\\conll-feats.train",
-        "valid": "C:\\wsl-shared\\cross-conll\\dev\\conll-feats.dev",
-        "test": "C:\\wsl-shared\\cross-conll\\test\\conll-feats.test"
+      "train_files": {
+        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\train_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\train.tok.low.en",
+        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\train.cross"
       },
-      "sentences": {
-        "train": "C:\\wsl-shared\\cross-conll\\train\\dpc.tok.norm.clean.cut.en.train",
-        "valid": "C:\\wsl-shared\\cross-conll\\dev\\dpc.tok.norm.clean.cut.en.dev",
-        "test": "C:\\wsl-shared\\cross-conll\\test\\dpc.tok.norm.clean.cut.en.test"
+      "valid_files": {
+        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\dev_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\dev.tok.low.en",
+        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\dev.cross"
       },
-      "labels": {
-        "train": "C:\\wsl-shared\\cross-conll\\train\\cross.txt",
-        "valid": "C:\\wsl-shared\\cross-conll\\dev\\cross.txt",
-        "test": "C:\\wsl-shared\\cross-conll\\test\\cross.txt"
+      "test_files": {
+        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\test_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\test.tok.low.en",
+        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\test.cross"
       }
     }
   }
