@@ -11,13 +11,7 @@ from torch.utils.data import DataLoader
 from allennlp.modules.elmo import batch_to_ids
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
-
 from ..LazyTextDataset import LazyTextDataset
-
-# Make results reproducible
-torch.manual_seed(3)
-torch.backends.cudnn.deterministic = True
-np.random.seed(3)
 
 # Run all numpy warnings as errors to catch issues with pearsonr
 np.seterr(all='raise')
@@ -255,6 +249,24 @@ class RegressionTrainer:
 
         return all_input_ids, all_input_mask
 
+    def save_model(self, valid_loss, valid_pearson, epoch):
+        torch.save({
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'valid_loss': valid_loss,
+            'valid_pearson': valid_pearson,
+            'epoch': epoch
+        }, self.checkpoint_f)
+
+    def load_model(self, checkpoint_f):
+        chckpnt_f = checkpoint_f if checkpoint_f is not None else self.checkpoint_f
+        checkpoint = torch.load(chckpnt_f, map_location=self.device)
+
+        try:
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+        except KeyError:
+            self.model.load_state_dict(checkpoint)
+
     @staticmethod
     def _plot_training(train_losses, valid_losses):
         fig = plt.figure(dpi=300)
@@ -317,7 +329,7 @@ class RegressionTrainer:
                 logging.info(f'!! Validation loss decreased ({valid_loss_min:.6f} --> {valid_loss:.6f}).')
                 logging.info(f'!! Saving model as {self.checkpoint_f}...')
 
-                torch.save(self.model.state_dict(), self.checkpoint_f)
+                self.save_model(valid_loss, valid_pearson, epoch)
                 last_saved_epoch = epoch
                 valid_loss_min = valid_loss
             else:
@@ -456,14 +468,12 @@ class RegressionTrainer:
 
         return losses, results
 
-    def test(self, checkpoint_f='checkpoint.pth', log_update_freq=0):
+    def test(self, checkpoint_f=None, log_update_freq=0):
         logging.info('Testing started.')
         test_start = time.time()
 
-        if self.checkpoint_f is None:
-            self.model.load_state_dict(torch.load(checkpoint_f, map_location=self.device))
-        else:
-            self.model.load_state_dict(torch.load(self.checkpoint_f, map_location=self.device))
+        self.load_model(checkpoint_f)
+        self.model = self.model.to(self.device)
 
         test_loss, test_results = self._process('test', log_update_freq)
 

@@ -2,7 +2,6 @@ import argparse
 from importlib import import_module
 import json
 import logging
-import matplotlib.pyplot as plt
 import os
 from pathlib import Path
 import random
@@ -20,59 +19,75 @@ from pylt3.utils.file_helpers import verify_paths
 
 
 # Make results reproducible
-torch.manual_seed(3)
-torch.cuda.manual_seed_all(3)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(3)
-random.seed(3)
-os.environ['PYTHONHASHSEED'] = str(3)
+def set_seed():
+    torch.manual_seed(3)
+    torch.cuda.manual_seed_all(3)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(3)
+    random.seed(3)
+    os.environ['PYTHONHASHSEED'] = str(3)
 
 
-def main(opts, config_p):
-    output_p = Path(opts['trainer'].pop('output_dir')).resolve()
+def main(old_opts, config_p):
+    output_p = Path(old_opts['trainer'].pop('output_dir')).resolve()
+    for hidden_dim in (256, 384, 512):
+        for dropout in (0, 0.1, 0.2, 0.3, 0.4):
+            opts = deepcopy(old_opts)
 
+            # opts['model']['relu']['use'] = relu
 
-    if opts['w2v']['use']:
-        load_w2v(opts)
+            opts['model']['final_drop'] = dropout
+            opts['ms']['recurrent_layer']['dropout'] = dropout
+            opts['w2v']['recurrent_layer']['dropout'] = dropout
+            opts['ft']['recurrent_layer']['dropout'] = dropout
 
-    if opts['fasttext']['use']:
-        load_fasttext(opts)
+            opts['ms']['recurrent_layer']['dim'] = hidden_dim
+            opts['w2v']['recurrent_layer']['dim'] = hidden_dim
+            opts['ft']['recurrent_layer']['dim'] = hidden_dim
 
-    model = load_model(opts)
-    logging.info('Model loaded!')
-    logging.info(model)
+            set_seed()
 
-    criterion = get_criterion(opts['criterion'])
-    optimizer, optim_name = get_optim(opts['optimizer'], model)
-    scheduler = get_scheduler(opts['scheduler'], optimizer)
+            if opts['w2v']['use']:
+                load_w2v(opts)
 
-    trainer = RegressionTrainer(ms=opts['ms'],
-                                w2v=opts['w2v'],
-                                fasttext=opts['fasttext'],
-                                elmo=opts['elmo'],
-                                bert=opts['bert'],
-                                model=model,
-                                criterion=criterion,
-                                optimizer=optimizer,
-                                scheduler=scheduler,
-                                **opts['trainer'].pop('files'),
-                                batch_size=(200, 200, 200))
+            if opts['ft']['use']:
+                load_fasttext(opts)
 
-    best_model_f, fig = trainer.train(**opts['trainer'])
-    best_model_p = Path(best_model_f).resolve()
-    loss, pearson = trainer.test()
+            model = load_model(opts)
+            logging.info('Model loaded!')
+            logging.info(model)
 
-    s = get_output_prefix(loss, pearson, optim_name, opts)
-    config_out = output_p.joinpath(s+'model.pth')
-    model_out = output_p.joinpath(s+'config.json')
+            criterion = get_criterion(opts['criterion'])
+            optimizer, optim_name = get_optim(opts['optimizer'], model)
+            scheduler = get_scheduler(opts['scheduler'], optimizer)
 
-    # copy config file to output dir
-    copy(config_p, config_out)
-    # move output model to output_dir
-    move(best_model_p, model_out)
-    # Save plot
-    fig.savefig(output_p.joinpath(s+'plot.png'))
+            trainer = RegressionTrainer(ms=opts['ms'],
+                                        w2v=opts['w2v'],
+                                        fasttext=opts['ft'],
+                                        elmo=opts['elmo'],
+                                        bert=opts['bert'],
+                                        model=model,
+                                        criterion=criterion,
+                                        optimizer=optimizer,
+                                        scheduler=scheduler,
+                                        **opts['trainer'].pop('files'),
+                                        batch_size=(200, 200, 200))
+
+            best_model_f, fig = trainer.train(**opts['trainer'])
+            best_model_p = Path(best_model_f).resolve()
+            loss, pearson = trainer.test()
+
+            s = get_output_prefix(loss, pearson, optim_name, opts)
+            model_out = output_p.joinpath(s+'model.pth')
+            config_out = output_p.joinpath(s+'config.json')
+
+            # copy config file to output dir
+            copy(config_p, config_out)
+            # move output model to output_dir
+            move(best_model_p, model_out)
+            # Save plot
+            fig.savefig(output_p.joinpath(s+'plot.png'))
 
 
 def get_output_prefix(loss, pearson, optim_name, opts):
@@ -80,18 +95,23 @@ def get_output_prefix(loss, pearson, optim_name, opts):
     s += f"{optim_name}-lr{opts['optimizer']['lr']:.0E}-"
 
     used = []
-    if opts['ms']['use']:
-        used.append('ms')
-    if opts['w2v']['use']:
-        used.append(f"{str(opts['w2v']['dim'])}w2v")
-    if opts['fasttext']['use']:
-        used.append(f"{str(opts['fasttext']['dim'])}ft")
+    for feat in ('ms', 'w2v', 'ft'):
+        if opts[feat]['use']:
+            feat_s = f"{str(opts[feat]['dim'])}{feat}-{opts[feat]['recurrent_layer']['type']}-"
+            feat_s += f"h{str(opts[feat]['recurrent_layer']['dim'])}"
+            if 'bidirectional' in opts[feat]['recurrent_layer'] and opts[feat]['recurrent_layer']['bidirectional']:
+                feat_s += '-bi'
+            used.append(feat_s)
+
     if opts['elmo']['use']:
         used.append('elmo')
     if opts['bert']['use']:
         used.append('bert')
 
-    s += '+'.join(used) + '+final_drop' + str(opts['model']['final_drop']) + '-'
+    s += '+'.join(used) + '+drop' + str(opts['model']['final_drop']) + '-'
+
+    if opts['model']['relu']['use']:
+        s += 'relu-'
 
     return s
 
@@ -143,8 +163,8 @@ def load_w2v(opts):
 def load_fasttext(opts):
     import fastText as ft
 
-    fasttext_p = Path(opts['fasttext']['path']).resolve()
-    opts['fasttext']['model'] = ft.load_model(str(fasttext_p))
+    fasttext_p = Path(opts['ft']['path']).resolve()
+    opts['ft']['model'] = ft.load_model(str(fasttext_p))
 
 
 def load_model(opts):
@@ -160,7 +180,7 @@ def load_model(opts):
     del opts_model['class']
     model = cls(opts['ms'],
                 opts['w2v'],
-                opts['fasttext'],
+                opts['ft'],
                 opts['elmo'],
                 opts['bert'],
                 final_drop=opts_model['final_drop'],
