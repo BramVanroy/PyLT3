@@ -4,6 +4,8 @@ from torch import nn
 from torch.nn.utils.rnn import pad_packed_sequence
 
 
+""" WARNING IF YOU UPDATE MAIN WITH THIS MODEL, SAVED CHECKPOITS WON'T WORK ANYMORE. """
+
 class RegressionRNN(nn.Module):
     def __init__(self, ms, w2v, ft, elmo, bert, final_drop, relu):
         super(RegressionRNN, self).__init__()
@@ -41,7 +43,8 @@ class RegressionRNN(nn.Module):
             groups.append(self.bert_group)
             logging.info('Bert enabled...')
 
-        self.concat = Concatenator()
+        if len(groups) > 1:
+            self.concat = Concatenator()
 
         self.dropout_layer = nn.Dropout(final_drop) if final_drop > 0 else None
         self.linear_layer = nn.Linear(sum([g.out_dims for g in groups]), 1)
@@ -55,18 +58,19 @@ class RegressionRNN(nn.Module):
 
     def forward(self, ms_input=None, w2v_ids=None, ft_vec=None, elmo_ids=None, bert_input=None):
         final_ms = self.ms_group(ms_input) if self.ms['use'] and ms_input is not None else None
-
         final_w2v = self.w2v_group(w2v_ids) if self.w2v['use'] and w2v_ids is not None else None
-        final_ft = self.ft_group(ft_vec) if self.ft['use'] and ft_vec is not None else None
+        final_ft =  self.ft_group(ft_vec) if self.ft['use'] and ft_vec is not None else None
         final_elmo = self.elmo_group(elmo_ids) if self.elmo['use'] and elmo_ids is not None else None
         final_bert = self.bert_group(bert_input) if self.bert['use'] and bert_input is not None else None
+
         sentence_finals = tuple([final for final in [final_w2v, final_ft, final_elmo, final_bert]
                                  if final is not None])
 
         sentence_cat = self.concat(sentence_finals) if len(sentence_finals) > 0 else None
-
         sentence_ms_cat = self.concat(tuple([final for final in [final_ms, sentence_cat] if final is not None]))
 
+        # print('sentence_ms_cat size', sentence_ms_cat.size())
+        # Only use the last item's output
         if self.final_drop > 0:
             sentence_ms_cat = self.dropout_layer(sentence_ms_cat)
 
@@ -173,11 +177,11 @@ class FastTextGroup(RNNLayerGroup):
 
     def forward(self, ft_vec):
         ft_dim = self.opts['recurrent_layer']['dim']
-        packed_ft_out, _ = self.rlayer(ft_vec)
+        packed_ft_out, _ = self.ft_rlayer(ft_vec)
 
         unpacked_ft_out, ft_lengths = pad_packed_sequence(packed_ft_out, batch_first=True)
 
-        if self.opts['recurrent_layer']['bidirectional']:
+        if self.ms['recurrent_layer']['bidirectional']:
             unpacked_ft_out = unpacked_ft_out[:, :, :ft_dim] + unpacked_ft_out[:, :, ft_dim:]
 
         # Get last item of each sequence, based on their *actual* lengths
@@ -193,20 +197,21 @@ class ElmoGroup(RNNLayerGroup):
 
         self.opts = opts
         self.elmo_layer = Elmo(opts['options_path'], opts['weights_path'], 1, dropout=opts['dropout'])
-        self.rlayer = self._build_recurrent_layer(opts)
+
+        if 'linear_layer' in opts and opts['linear_layer'] is not None:
+            self.elmo_llayer = nn.Linear(opts['dim'], opts['linear_layer']['dim'])
+            self.out_dims = opts['linear_layer']['dim']
+        else:
+            self.out_dims = opts['dim']
 
     def forward(self, elmo_ids):
-        elmo_dim = self.opts['recurrent_layer']['dim']
         elmo_out = self.elmo_layer(elmo_ids)
         # Only using one representation, so get it by first index
         elmo_out = elmo_out['elmo_representations'][0]
-
-        elmo_out, _ = self.rlayer(elmo_out)
-
-        if self.opts['recurrent_layer']['bidirectional']:
-            elmo_out = elmo_out[:, :, :elmo_dim] + elmo_out[:, :, elmo_dim:]
-
         final_elmo = elmo_out[:, -1, :]
+
+        if 'linear_layer' in self.opts and self.opts['linear_layer'] is not None:
+            final_elmo = self.elmo_llayer(final_elmo)
 
         return final_elmo
 
@@ -238,7 +243,7 @@ class BertGroup(RNNLayerGroup):
         bert_ids, bert_mask = bert_input
 
         all_bert_layers, _ = self.bert_layer(bert_ids, attention_mask=bert_mask)
-        bert_concat = torch.cat(tuple([all_bert_layers[i] for i in self.opts['concat_layers']]), dim=-1)
+        bert_concat = torch.cat(tuple([all_bert_layers[i] for i in self.bert['concat_layers']]), dim=-1)
         # Pooling by also setting masked items to zero
         bert_mask = bert_mask.unsqueeze(2)
         # Multiply output with mask to only retain non-paddding tokens
@@ -247,7 +252,36 @@ class BertGroup(RNNLayerGroup):
         # First item ['CLS'] is sentence representation
         final_bert = bert_pooled[:, 0, :]
 
-        if self.opts['linear_layer'] is not None:
+        if self.bert['linear_layer'] is not None:
             final_bert = self.bert_llayer(final_bert)
 
         return final_bert
+
+
+def load_model(opts):
+    """
+    Loads an NN model based on the configuration file.
+
+    :param opts: options dict
+    :return: initialised NN model
+    """
+    opts_model = opts['model']
+    del opts_model['class']
+    model = RegressionRNN(opts['ms'],
+                opts['w2v'],
+                opts['ft'],
+                opts['elmo'],
+                opts['bert'],
+                final_drop=opts_model['final_drop'],
+                relu=opts_model['relu'])
+
+    return model
+
+
+if __name__ == '__main__':
+    import json
+    with open(r'C:\Python\projects\PyLT3\pylt3\ml\rnn\regression\rnn-basic-config.json', 'r') as config_fh:
+        options = json.load(config_fh)
+
+    model = load_model(options)
+    print(model)

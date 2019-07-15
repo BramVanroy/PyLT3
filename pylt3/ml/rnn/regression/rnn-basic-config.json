@@ -1,12 +1,17 @@
 {
   "ms": {
-    "use": true,
+    "use": false,
     "dim": 147,
     "recurrent_layer": {
-      "dim": 200,
+      "dim": 256,
       "bidirectional": true,
       "type": "gru",
       "dropout": 0.2
+    },
+    "pretrained": {
+      "use": true,
+      "path": "C:\\wsl-shared\\clin-output\\ms\\loss1.28-pearson0.47-adam-lr1E-04-147ms-gru-h256-bi+drop0.1-model.pth",
+      "freeze": true
     }
   },
   "w2v": {
@@ -18,10 +23,15 @@
     "path": "C:\\wsl-shared\\arda-dataset\\W2V_features\\dpc+news.norm.tok.low.word2vec.dim147.txt",
     "binary": false,
     "recurrent_layer": {
-      "dim": 200,
+      "dim": 512,
       "bidirectional": true,
       "type": "gru",
       "dropout": 0
+    },
+    "pretrained": {
+      "use": true,
+      "path": "C:\\wsl-shared\\clin-output\\w2v\\loss1.20-pearson0.52-adam-lr1E-05-147w2v-gru-h512-bi+drop0.2-model.pth",
+      "freeze": true
     }
   },
   "ft": {
@@ -36,13 +46,16 @@
     }
   },
   "elmo": {
-    "use": false,
+    "use": true,
     "options_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_options.json",
     "weights_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512_2048cnn_2xhighway/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5",
     "dim": 1024,
     "dropout": 0,
-    "linear_layer": {
-      "dim": 200
+    "recurrent_layer": {
+      "dim": 256,
+      "bidirectional": true,
+      "type": "gru",
+      "dropout": 0.2
     }
   },
   "bert": {
@@ -53,7 +66,7 @@
     "concat_layers": [-1, -2, -3, -4],
     "max_seq_len": 64,
     "linear_layer": {
-      "dim": 200
+      "dim": 256
     }
   },
   "model": {
@@ -68,8 +81,8 @@
   "criterion": "mse",
   "optimizer": {
     "name": "adam",
-    "lr": 0.0001,
-    "weight_decay": 0,
+    "lr": 2e-05,
+    "weight_decay": 2e-04,
     "eps": 1e-07
   },
   "scheduler": {
@@ -81,24 +94,24 @@
   },
   "trainer": {
     "epochs": 1000,
-    "patience": 20,
-    "log_update_freq": 25,
-    "output_dir": "C:\\wsl-shared\\clin-output\\ms",
+    "patience": 10,
+    "log_update_freq": 10,
+    "output_dir": "C:\\wsl-shared\\clin-output\\elmo",
     "files": {
       "train_files": {
-        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\train_unsparse_features.txt",
-        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\train.tok.low.en",
-        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\train.cross"
+        "ms": "C:\\wsl-shared\\clin-dataset\\MS_features_onehot\\train_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\clin-dataset\\tokenized\\train.tok.low.en",
+        "labels": "C:\\wsl-shared\\clin-dataset\\cross\\train.cross"
       },
       "valid_files": {
-        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\dev_unsparse_features.txt",
-        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\dev.tok.low.en",
-        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\dev.cross"
+        "ms": "C:\\wsl-shared\\clin-dataset\\MS_features_onehot\\dev_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\clin-dataset\\tokenized\\dev.tok.low.en",
+        "labels": "C:\\wsl-shared\\clin-dataset\\cross\\dev.cross"
       },
       "test_files": {
-        "ms": "C:\\wsl-shared\\arda-dataset\\MS_features_onehot\\test_unsparse_features.txt",
-        "sentences": "C:\\wsl-shared\\arda-dataset\\tokenized\\test.tok.low.en",
-        "labels": "C:\\wsl-shared\\arda-dataset\\cross_values\\test.cross"
+        "ms": "C:\\wsl-shared\\clin-dataset\\MS_features_onehot\\test_unsparse_features.txt",
+        "sentences": "C:\\wsl-shared\\clin-dataset\\tokenized\\test.tok.low.en",
+        "labels": "C:\\wsl-shared\\clin-dataset\\cross\\test.cross"
       }
     }
   }

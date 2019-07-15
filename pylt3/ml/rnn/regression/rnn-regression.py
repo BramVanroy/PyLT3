@@ -29,65 +29,104 @@ def set_seed():
     os.environ['PYTHONHASHSEED'] = str(3)
 
 
-def main(old_opts, config_p):
-    output_p = Path(old_opts['trainer'].pop('output_dir')).resolve()
-    for hidden_dim in (256, 384, 512):
-        for dropout in (0, 0.1, 0.2, 0.3, 0.4):
-            opts = deepcopy(old_opts)
+def main(old_opts):
+    for lr in (1E-03, 1E-04, 1E-05):
+        for dropout in (0, 0.2, 0.4):
+            for hidden_dim in (256, 384, 512):
+                opts = deepcopy(old_opts)
 
-            # opts['model']['relu']['use'] = relu
+                output_p = Path(opts['trainer'].pop('output_dir')).resolve()
 
-            opts['model']['final_drop'] = dropout
-            opts['ms']['recurrent_layer']['dropout'] = dropout
-            opts['w2v']['recurrent_layer']['dropout'] = dropout
-            opts['ft']['recurrent_layer']['dropout'] = dropout
+                for o in (opts, old_opts):
+                    # o['model']['relu']['use'] = relu
+                    o['optimizer']['lr'] = lr
+                    o['model']['final_drop'] = dropout
+                    # o['ms']['recurrent_layer']['dropout'] = dropout
+                    # o['w2v']['recurrent_layer']['dropout'] = dropout
+                    # o['ft']['recurrent_layer']['dropout'] = dropout
+                    o['elmo']['recurrent_layer']['dropout'] = dropout
+                    o['elmo']['dropout'] = dropout
 
-            opts['ms']['recurrent_layer']['dim'] = hidden_dim
-            opts['w2v']['recurrent_layer']['dim'] = hidden_dim
-            opts['ft']['recurrent_layer']['dim'] = hidden_dim
+                    # o['ms']['recurrent_layer']['dim'] = hidden_dim
+                    # o['w2v']['recurrent_layer']['dim'] = hidden_dim
+                    # o['ft']['recurrent_layer']['dim'] = hidden_dim
+                    o['elmo']['recurrent_layer']['dim'] = hidden_dim
 
-            set_seed()
+                    # o['ms']['pretrained']['freeze'] = freeze
+                    # o['w2v']['pretrained']['freeze'] = freeze
 
-            if opts['w2v']['use']:
-                load_w2v(opts)
+                    # o['bert']['linear_layer']['dim'] = linear_dim
 
-            if opts['ft']['use']:
-                load_fasttext(opts)
+                set_seed()
 
-            model = load_model(opts)
-            logging.info('Model loaded!')
-            logging.info(model)
+                if opts['w2v']['use']:
+                    load_w2v(opts)
 
-            criterion = get_criterion(opts['criterion'])
-            optimizer, optim_name = get_optim(opts['optimizer'], model)
-            scheduler = get_scheduler(opts['scheduler'], optimizer)
+                if opts['ft']['use']:
+                    load_fasttext(opts)
 
-            trainer = RegressionTrainer(ms=opts['ms'],
-                                        w2v=opts['w2v'],
-                                        fasttext=opts['ft'],
-                                        elmo=opts['elmo'],
-                                        bert=opts['bert'],
-                                        model=model,
-                                        criterion=criterion,
-                                        optimizer=optimizer,
-                                        scheduler=scheduler,
-                                        **opts['trainer'].pop('files'),
-                                        batch_size=(200, 200, 200))
+                model = load_model(opts)
 
-            best_model_f, fig = trainer.train(**opts['trainer'])
-            best_model_p = Path(best_model_f).resolve()
-            loss, pearson = trainer.test()
+                if opts['ms']['use'] and opts['ms']['pretrained']['use']:
+                    model = load_weights('ms', opts['ms']['pretrained'], model)
 
-            s = get_output_prefix(loss, pearson, optim_name, opts)
-            model_out = output_p.joinpath(s+'model.pth')
-            config_out = output_p.joinpath(s+'config.json')
+                if opts['w2v']['use'] and opts['w2v']['pretrained']['use']:
+                    model = load_weights('w2v', opts['w2v']['pretrained'], model)
 
-            # copy config file to output dir
-            copy(config_p, config_out)
-            # move output model to output_dir
-            move(best_model_p, model_out)
-            # Save plot
-            fig.savefig(output_p.joinpath(s+'plot.png'))
+                logging.info('Model loaded!')
+                logging.info(model)
+                criterion = get_criterion(opts['criterion'])
+                optimizer, optim_name = get_optim(opts['optimizer'], model)
+                scheduler = get_scheduler(opts['scheduler'], optimizer)
+
+                trainer = RegressionTrainer(ms=opts['ms'],
+                                            w2v=opts['w2v'],
+                                            fasttext=opts['ft'],
+                                            elmo=opts['elmo'],
+                                            bert=opts['bert'],
+                                            model=model,
+                                            criterion=criterion,
+                                            optimizer=optimizer,
+                                            scheduler=scheduler,
+                                            **opts['trainer'].pop('files'),
+                                            batch_size=(200, 200, 200))
+
+                best_model_f, fig = trainer.train(**opts['trainer'])
+                best_model_p = Path(best_model_f).resolve()
+                loss, pearson = trainer.test()
+
+                s = get_output_prefix(loss, pearson, optim_name, opts)
+                model_out = output_p.joinpath(s+'model.pth')
+                config_out = output_p.joinpath(s+'config.json')
+
+                # write config file based on actual values
+                with open(config_out, 'w') as fhout:
+                    json.dump(old_opts, fhout)
+
+                # move output model to output_dir
+                move(best_model_p, model_out)
+                # Save plot
+                fig.savefig(output_p.joinpath(s+'plot.png'))
+
+
+def load_weights(place, opts, model):
+    """ https://discuss.pytorch.org/t/how-to-load-part-of-pre-trained-model/1113/2 """
+    p_weights = Path(opts['path']).resolve()
+
+    pre_state = torch.load(p_weights)['model_state_dict']
+    model_state = model.state_dict()
+    pre_state = {k: v for k, v in pre_state.items() if k in model_state and k.startswith(place)}
+    model_state.update(pre_state)
+    model.load_state_dict(model_state)
+
+    # freeze pretrained layers?
+    if opts['freeze']:
+        for name, param in model.named_parameters():
+            if name.startswith(place):
+                param.requires_grad = False
+                print(f"{name}: frozen...")
+
+    return model
 
 
 def get_output_prefix(loss, pearson, optim_name, opts):
@@ -97,16 +136,28 @@ def get_output_prefix(loss, pearson, optim_name, opts):
     used = []
     for feat in ('ms', 'w2v', 'ft'):
         if opts[feat]['use']:
-            feat_s = f"{str(opts[feat]['dim'])}{feat}-{opts[feat]['recurrent_layer']['type']}-"
-            feat_s += f"h{str(opts[feat]['recurrent_layer']['dim'])}"
-            if 'bidirectional' in opts[feat]['recurrent_layer'] and opts[feat]['recurrent_layer']['bidirectional']:
+            feat_s = f"{opts[feat]['dim']}{feat}-{opts[feat]['recurrent_layer']['type']}-"
+            feat_s += f"h{opts[feat]['recurrent_layer']['dim']}"
+            if opts[feat]['recurrent_layer']['bidirectional']:
                 feat_s += '-bi'
+            if opts[feat]['pretrained']['use']:
+                feat_s += '-pre'
+                if opts[feat]['pretrained']['freeze']:
+                    feat_s += '-frozen'
             used.append(feat_s)
 
     if opts['elmo']['use']:
-        used.append('elmo')
+        feat_s = f"elmo-{opts['elmo']['recurrent_layer']['type']}-"
+        feat_s += f"h{opts['elmo']['recurrent_layer']['dim']}"
+        if opts['elmo']['recurrent_layer']['bidirectional']:
+            feat_s += '-bi'
+
+        used.append(feat_s)
+
     if opts['bert']['use']:
-        used.append('bert')
+        bert_s = f"{opts['bert']['dim']}bert"
+        bert_s += f"-llayer{opts['bert']['linear_layer']['dim']}"
+        used.append(bert_s)
 
     s += '+'.join(used) + '+drop' + str(opts['model']['final_drop']) + '-'
 
@@ -124,25 +175,27 @@ def get_criterion(crit_str):
 
 
 def get_optim(optim_obj, model):
-    optim_name = optim_obj.pop('name')
+    optim_copy = deepcopy(optim_obj)
+    optim_name = optim_copy.pop('name')
     if optim_name.lower() == 'bert-adam':
         from pytorch_pretrained_bert.optimization import BertAdam
         return BertAdam([p for p in model.parameters() if p.requires_grad],
-                        **optim_obj), optim_name
+                        **optim_copy), optim_name
     elif optim_name.lower() == 'adam':
         return optim.Adam([p for p in model.parameters() if p.requires_grad],
-                          **optim_obj), optim_name
+                          **optim_copy), optim_name
     else:
-        raise ValueError
+        raise NotImplementedError('This optimiser has not been implemented in this system yet.')
 
 
 def get_scheduler(sched_obj, optimizer):
-    if sched_obj.pop('use'):
-        sched_name = sched_obj.pop('name')
+    sched_copy = deepcopy(sched_obj)
+    if sched_copy.pop('use'):
+        sched_name = sched_copy.pop('name')
         if sched_name.lower() == 'reducelronplateau':
-            return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', **sched_obj)
+            return optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', **sched_copy)
         else:
-            raise ValueError
+            raise NotImplementedError('This scheduler has not been implemented in this system yet.')
     else:
         return None
 
@@ -198,4 +251,4 @@ if __name__ == '__main__':
     with open(config_f, 'r') as config_fh:
         options = json.load(config_fh)
 
-    main(options, config_f)
+    main(options)

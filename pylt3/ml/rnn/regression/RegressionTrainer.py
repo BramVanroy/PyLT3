@@ -212,7 +212,8 @@ class RegressionTrainer:
         for s in sentences:
             elmo_sentences.append(['<S>', *s, '</S>'])
 
-        return elmo_sentences
+        elmo_ids = batch_to_ids(elmo_sentences)
+        return elmo_ids
 
     def prepare_bert(self, sentences):
         all_input_ids = []
@@ -416,8 +417,7 @@ class RegressionTrainer:
                 w2v_ids = None
 
             if self.elmo['use']:
-                elmo_sentence = self.prepare_elmo(sentences)
-                elmo_ids = batch_to_ids(elmo_sentence)
+                elmo_ids = self.prepare_elmo(sentences)
                 elmo_ids = elmo_ids[sorted_ids] if sorted_ids is not None else elmo_ids
                 elmo_ids = elmo_ids.to(self.device)
             else:
