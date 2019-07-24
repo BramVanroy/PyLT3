@@ -38,7 +38,7 @@ def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs
             if kwargs['recursive']:
                 # If truth-y value: keep value, otherwise use None
                 next_exclude = exclude_dirs if exclude_dirs else None
-                scan_dir_and_execute(entry.path, exec_func, next_exclude, verbose=verbose, recursive=True)
+                scan_dir_and_execute(str(entry), exec_func, next_exclude, verbose=verbose, recursive=True)
         elif entry.is_file():
             if verbose > 1:
                 print(f"\tProcessing {entry.name}", flush=True)
