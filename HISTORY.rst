@@ -3,6 +3,11 @@ History
 #######
 
 **************************
+0.7.4 (July 24th, 2019)
+**************************
+* Removed :code:`Path().path` in favor of :code:`str(Path())`
+
+**************************
 0.7.3 (January 18th, 2019)
 **************************
 * Added :code:`normalize_digits` to :code:`preprocessing`. This tiny function replaces all digits by ones in a file.
