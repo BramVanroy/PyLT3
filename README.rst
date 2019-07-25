@@ -2,8 +2,6 @@
 Installation
 ============
 
-Installing PyLT3 (pronounced as *pilot* or *pilot-ee*) is as easy as 1, 2, *pylt3*! Haha... Ha... Using pip:
-
 .. code:: bash
 
   pip install pylt3
