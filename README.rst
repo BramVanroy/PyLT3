@@ -9,7 +9,7 @@ Installation
 =====
 Notes
 =====
-First of all, this is a very young package that is continuously in development. Everything is subject to change.
+First of all, this is a package that is continuously in development. Everything is subject to change.
 Like, literally... *everything*. At the moment, the package is more a way for me to understand building and maintaining
 Python packages than that it aims to be a full-fledged tool for the Python community. With that, I am very eager to
 learn, so `pull requests`_, and `suggestions and issues`_ are always welcome.

@@ -2,6 +2,12 @@
 History
 #######
 
+*************************
+0.7.7 (August 25th, 2019)
+*************************
+* Removed deep learning code from PyLT3. The new direction for PyLT3 is to be a utility package with some
+  text (pre)processing features.
+
 ***********************
 0.7.6 (July 25th, 2019)
 ***********************

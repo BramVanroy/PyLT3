@@ -6,10 +6,16 @@ from linecache import getline
 
 from pylt3.utils.type_helpers import verify_kwargs
 
+try:
+    from nltk import word_tokenize
+except ModuleNotFoundError:
+    pass
+
+
 
 class PreProcessor:
     def __init__(self, tokenizer=None, lang=None):
-        self.digit_table = str.maketrans("0123456789", "1111111111")
+        self.digit_table = str.maketrans('0123456789', '1111111111')
         self.url_regex = r'((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www\d*\.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.,)(-]+)((?:\/[\+~%\/.\w_-]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
         self.unicode_regex = r'(?<!\b[a-zA-Z]:)(\\u[0-9A-Fa-f]{4})'
         self.punct_regex = r'(?<!\w)[^\sa-zA-Z0-9_]+(?!\w)'
@@ -34,7 +40,6 @@ class PreProcessor:
                     if verbose:
                         print(f'Failed to load spaCy: {e}...\nWill try to use NLTK instead', flush=True)
                     try:
-                        from nltk import word_tokenize
                         self.tokenizer = 'nltk'
                     except (ModuleNotFoundError, ImportError, AttributeError, OSError) as e:
                         if verbose:
@@ -50,7 +55,6 @@ class PreProcessor:
                 elif tokenizer == 'nltk':
                     if verbose:
                         print('Using NLTK\'s tokenizer...', flush=True)
-                    from nltk import word_tokenize
                     self.tokenizer = 'nltk'
                 elif tokenizer == 'naive':
                     if verbose:

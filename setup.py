@@ -5,7 +5,7 @@ with open('README.rst', 'r', encoding='utf-8') as fh:
 
 setup(
     name='pylt3',
-    version='0.7.6',
+    version='0.7.7',
     description='A collection of helper functions and NLP scripts',
     long_description=long_description,
     keywords='nlp xml file-handling helpers',
@@ -15,13 +15,11 @@ setup(
     author_email='bramvanroy@hotmail.com',
     license='MIT',
     classifiers=[
-        'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering',
         'Topic :: Text Processing',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
     ],
@@ -29,5 +27,5 @@ setup(
         'Bug Reports': 'https://github.com/BramVanroy/pylt3/issues',
         'Source': 'https://github.com/BramVanroy/pylt3',
     },
-    python_requires='>=3.5'
+    python_requires='>=3.6'
 )
