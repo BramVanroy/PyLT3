@@ -1,13 +1,15 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+with open('README.rst', 'r', encoding='utf-8') as fh:
+    long_description = fh.read()
 
 setup(
     name='pylt3',
-    version='0.7.3',
+    version='0.7.6',
     description='A collection of helper functions and NLP scripts',
-    long_description='During my time working on the PhD project PreDict, I have written and gathered a bunch of useful'
-                     ' functions. They are collected here as part of the pylt3 package.',
+    long_description=long_description,
     keywords='nlp xml file-handling helpers',
-    packages=['pylt3'],
+    packages=find_packages(exclude=('tests/', 'tests/**/*', 'test', 'examples/')),
     url='https://github.com/BramVanroy/pylt3',
     author='Bram Vanroy',
     author_email='bramvanroy@hotmail.com',

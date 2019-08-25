@@ -1,0 +1,6 @@
+include LICENSE.txt HISTORY.rst README.rst Pipfile
+graft pylt3
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+prune tests*
+prune examples*
