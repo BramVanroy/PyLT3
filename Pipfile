@@ -19,6 +19,7 @@ spacy = "*"
 pandas = "*"
 lxml = "*"
 torch = "*"
+twine = "*"
 
 [dev-packages]
 tornado = "*"

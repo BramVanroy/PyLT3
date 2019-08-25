@@ -5,7 +5,7 @@ with open('README.rst', 'r', encoding='utf-8') as fh:
 
 setup(
     name='pylt3',
-    version='0.7.7',
+    version='0.7.8',
     description='A collection of helper functions and NLP scripts',
     long_description=long_description,
     keywords='nlp xml file-handling helpers',
