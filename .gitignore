@@ -4,6 +4,7 @@ apex
 pytorch-pretrained-BERT
 **/logs/
 *.pth
+Pipfile
 Pipfile.lock
 pylt3/ml/data/*
 

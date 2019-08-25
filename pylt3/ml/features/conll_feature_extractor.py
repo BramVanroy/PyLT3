@@ -81,7 +81,7 @@ def file2feats(pfin: Union[Path, AnyStr], pffeats: Union[Path, AnyStr], pfout: U
     with open(str(pffeats), 'rb') as fh_feats:
         ms_feats = pickle.load(fh_feats)
 
-    nro_feats = sum(len(v) for v in ms_feats.values())
+    nro_feats = sum([len(v) for v in ms_feats.values()])
     nro_sentences = 0
     with open(str(pfin), encoding=encoding) as fhin, open(str(pfout), 'w', encoding='utf-8') as fhout:
         sentence = []
