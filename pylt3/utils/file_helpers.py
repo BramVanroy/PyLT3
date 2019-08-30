@@ -8,15 +8,14 @@ from sklearn.model_selection import train_test_split
 from .type_helpers import verify_kwargs, is_simple_list
 
 
-def get_number_of_lines(fin):
+def get_n_lines(fin):
     pfin = Path(fin).resolve()
 
-    i = 0
-    with open(str(pfin)) as fhin:
-        for i, _ in enumerate(fhin, 1):
+    with pfin.open() as fhin:
+        for line_idx, _ in enumerate(fhin, 1):
             pass
 
-    return i
+    return line_idx
 
 
 def scan_dir_and_execute(root, exec_func, exclude_dirs=None, verbose=0, **kwargs):

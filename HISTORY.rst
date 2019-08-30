@@ -3,6 +3,12 @@ History
 #######
 
 *************************
+0.7.9 (August 30th, 2019)
+*************************
+* Improved :code:`get_n_lines`
+
+
+*************************
 0.7.8 (August 25th, 2019)
 *************************
 * Removed deep learning code from PyLT3. The new direction for PyLT3 is to be a utility package with some

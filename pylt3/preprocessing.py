@@ -12,7 +12,6 @@ except ModuleNotFoundError:
     pass
 
 
-
 class PreProcessor:
     def __init__(self, tokenizer=None, lang=None):
         self.digit_table = str.maketrans('0123456789', '1111111111')
