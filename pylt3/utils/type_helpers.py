@@ -5,6 +5,14 @@ def is_simple_list(li):
     return isinstance(li, list) or isinstance(li, tuple)
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def clean_simple_dict(simple_dict, side='keys', **kwargs):
     default_params = {'rm_only_punct': False, 'rm_contains_punct': False, 'rm_only_digits': False,
                       'rm_contains_digits': False, 'rm_only_nonan': False, 'rm_contains_nonan': False}
