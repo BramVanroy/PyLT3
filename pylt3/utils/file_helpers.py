@@ -3,8 +3,6 @@ from pathlib import Path
 import locale
 from math import floor
 
-from sklearn.model_selection import train_test_split
-
 from .type_helpers import verify_kwargs, is_simple_list
 
 
@@ -158,6 +156,8 @@ def print_tuplelist(tupelist, output_file, **kwargs):
 
 
 def _get_split_idxs(data_size, shuffle, train_size, test_size, dev_size):
+    from sklearn.model_selection import train_test_split
+
     indxs = list(range(data_size))
 
     train_dev_size = train_size + dev_size
