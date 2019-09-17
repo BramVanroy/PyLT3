@@ -22,7 +22,7 @@ def unsparse_file(fin, dim, fhout=sys.stdout):
         pfout = Path(fhout).resolve()
         fhout = open(pfout, 'w', encoding='utf-8')
 
-    with open(pfin, encoding='utf-8') as fhin:
+    with pfin.open(encoding='utf-8') as fhin:
         for line in fhin:
             line = line.strip()
             tokens = unsparse(line)
