@@ -181,7 +181,7 @@ def split_files(input_files, train_size, test_size, dev_size=None, output_exts=N
 
     # Get number of lines of input
     input_paths = [Path(f).resolve() for f in input_files]
-    nro_lines = [get_number_of_lines(p) for p in input_paths]
+    nro_lines = [get_n_lines(p) for p in input_paths]
 
     # All input files must be the same size
     if len(set(nro_lines)) > 1:
@@ -190,7 +190,7 @@ def split_files(input_files, train_size, test_size, dev_size=None, output_exts=N
         nro_lines = nro_lines[0]
 
     # if all sizes are less than (or equal to) 1, then we're probably using percentages
-    percent_divide = all([True if x <= 1 else False for x in split_sizes])
+    percent_divide = all(x <= 1 for x in split_sizes)
 
     # Get missing values. One of the given values can be -1 and its actual value will be calculated.
     if split_sizes.count(-1) > 1:
