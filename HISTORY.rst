@@ -3,6 +3,11 @@ History
 #######
 
 ***************************
+0.8.1 (September 9th, 2019)
+***************************
+* Only require sklearn when using specific functions.
+
+***************************
 0.8.0 (September 2nd, 2019)
 ***************************
 * Added :code:`is_number` to :code:`type_helpers`
